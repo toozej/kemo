@@ -1,0 +1,12 @@
+name: NGINX Service - Working
+description: |
+  A working NGINX deployment with service exposing port 80.
+source: https://kubernetes.io/docs/concepts/services-networking/service/
+tags: [nginx, service, networking, basic, bad]
+objectives:
+  - Deploy a service fronting an NGINX deployment
+  - Access the service via port-forward
+observations:
+  - NGINX pod starts
+  - Service routes traffic correctly
+
