@@ -60,9 +60,9 @@ When running demos, Kemo launches a rich terminal interface with multiple panels
 │         Main Execution          │      Demo Logs      │
 │            Panel                │      (tail -f)      │
 │                                 │                     │
-├─────────────────────────────────┼─────────────────────┤
-│        Optional Panels          │   Optional Panels   │
-│     (kubectl watch, events)     │ (describe, status)  │
+│                                 ┼─────────────────────┤
+│                                 │ Kubernetes Resources│
+│                                 │ (get, status)       │
 └─────────────────────────────────┴─────────────────────┘
 ```
 
@@ -74,12 +74,12 @@ All hotkeys use the prefix `Ctrl-k` followed by a command key:
 - **`Ctrl-k r`** - Restart demo (deletes resources and reapplies)
 - **`Ctrl-k n`** - Next step (if demo supports multi-step execution)
 - **`Ctrl-k q`** - Quit demo (with confirmation)
-- **`Ctrl-k h`** - Show hotkeys help
+- **`Ctrl-k ?`** - Show hotkeys help
 
 #### Kubernetes Operations  
 - **`Ctrl-k s`** - Show Kubernetes status (pods, services, deployments)
 - **`Ctrl-k d`** - Open Kubernetes dashboard in browser
-- **`Ctrl-k l`** - Tail application logs in current pane
+- **`Ctrl-k o`** - Tail application logs in current pane
 - **`Ctrl-k i`** - Describe selected Kubernetes resource (interactive)
 
 #### Panel Management
@@ -97,7 +97,7 @@ All hotkeys use the prefix `Ctrl-k` followed by a command key:
 ### Status Bar
 The bottom status bar shows:
 - Current demo and variant
-- Hotkey reminder (`Ctrl-k h for help`)
+- Hotkey reminder (`Ctrl-k ? for help`)
 - Session information
 
 ## 🎯 Demo Selection Features
@@ -184,7 +184,6 @@ observations:
 ```bash
 # Demo Operations
 ./kemo select-demo              # Interactive demo selector
-./kemo select-demo-and-log      # With logging enabled
 ./kemo browse-demos             # Demo browser interface
 ./kemo run-demo <demo> <variant> # Run specific demo
 ./kemo list-tags                # Show all available tags
@@ -206,14 +205,6 @@ observations:
 - Logs include timestamps and clean formatting (no terminal colors)
 - Each demo variant maintains its own log directory
 - Log files are automatically gitignored
-
-### Enhanced Logging
-Enable verbose logging:
-```bash
-./kemo select-demo-and-log
-# or
-KEMO_VERBOSE=true ./kemo run-demo hello-world good
-```
 
 ### Log Locations
 ```

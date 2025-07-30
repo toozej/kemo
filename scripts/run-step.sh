@@ -64,6 +64,7 @@ fi
 # Set environment variables for the session
 tmux_cmd set-environment -t "$session_name" KEMO_DEMO "$demo"
 tmux_cmd set-environment -t "$session_name" KEMO_VARIANT "$variant"
+tmux_cmd set-environment -t "$session_name" KEMO_NS "$demo-$variant"
 tmux_cmd set-environment -t "$session_name" KEMO_STEP "$step"
 tmux_cmd set-environment -t "$session_name" KEMO_LOG_FILE "$log_file"
 tmux_cmd set-environment -t "$session_name" KEMO_SESSION "$session_name"
@@ -76,7 +77,7 @@ cat > "/tmp/kemo-hotkeys-$session_name.sh" << 'HOTKEY_EOF'
 case "$1" in
   restart)
     gum confirm '🔄 Restart demo?' && {
-      kubectl delete all --all -n "$KEMO_DEMO" 2>/dev/null || true
+      kubectl delete all --all -n "$KEMO_NS" 2>/dev/null || true
       just apply-manifests "$KEMO_DEMO" "$KEMO_VARIANT"
     }
     ;;
@@ -88,7 +89,7 @@ case "$1" in
     clear
     gum style --foreground cyan --bold '📊 Kubernetes Status'
     echo
-    kubectl get pods,svc,deploy -n "$KEMO_DEMO" --no-headers 2>/dev/null || echo 'No resources found'
+    kubectl get pods,svc,deploy -n "$KEMO_NS" --no-headers 2>/dev/null || echo 'No resources found'
     echo
     gum style --foreground yellow 'Press any key to continue...'
     read -n 1
@@ -106,14 +107,24 @@ case "$1" in
     fi
     ;;
   logs)
-    kubectl logs -f -l app="$KEMO_DEMO" -n "$KEMO_DEMO" 2>/dev/null || {
+    kubectl logs -f -n "$KEMO_NS" 2>/dev/null || {
       gum style --foreground red '❌ No logs available'
       sleep 2
     }
     ;;
+  open-url)
+    gum style --foreground blue '🌐 Opening Kubernetes Service URL ...'
+    if command -v open >/dev/null; then
+      open "http://$KEMO_DEMO.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local"
+    elif command -v xdg-open >/dev/null; then
+      xdg-open "http://$KEMO_DEMO.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local"
+    else
+      gum style --foreground yellow "📋 Kubernetes Service URL: http://$KEMO_DEMO.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local"
+    fi
+    ;;
   describe)
-    resource=$(kubectl get pods,svc,deploy -n "$KEMO_DEMO" -o name 2>/dev/null | gum choose --header '📋 Select resource to describe')
-    [[ -n "$resource" ]] && kubectl describe -n "$KEMO_DEMO" "$resource"
+    resource=$(kubectl get pods,svc,deploy -n "$KEMO_NS" -o name 2>/dev/null | gum choose --header '📋 Select resource to describe')
+    [[ -n "$resource" ]] && kubectl describe -n "$KEMO_NS" "$resource"
     ;;
   help)
     clear
@@ -123,9 +134,10 @@ case "$1" in
     gum style --foreground white 'Ctrl-k n : Next step (if available)'  
     gum style --foreground white 'Ctrl-k s : Show Kubernetes status'
     gum style --foreground white 'Ctrl-k d : Open Kubernetes dashboard'
-    gum style --foreground white 'Ctrl-k l : Tail application logs'
+    gum style --foreground white 'Ctrl-k u : Open application URL'
+    gum style --foreground white 'Ctrl-k o : Tail application logs'
     gum style --foreground white 'Ctrl-k i : Describe K8s resource'
-    gum style --foreground white 'Ctrl-k h : Show this help'
+    gum style --foreground white 'Ctrl-k ? : Show this help'
     gum style --foreground white 'Ctrl-k q : Quit demo'
     echo
     gum style --foreground cyan 'Panel Management:'
@@ -143,7 +155,6 @@ case "$1" in
     ;;
 esac
 HOTKEY_EOF
-
 chmod +x "/tmp/kemo-hotkeys-$session_name.sh"
 
 # Set up initial pane layout
@@ -151,40 +162,90 @@ tmux_cmd select-window -t "$session_name:0"
 tmux_cmd split-window -t "$session_name:0" -h -p 30
 # After splitting, pane 0.0 is left, 0.1 is right
 
-# Split right pane (0.1) vertically to create 0.2 (bottom right)
-tmux_cmd split-window -t "$session_name:0.1" -v -p 50
-# After splitting, pane 0.1 is top right, 0.2 is bottom right
+# Split left pane (0.0) vertically
+tmux_cmd split-window -t "$session_name:0.0" -v -p 15
+# After splitting, pane 0.0 is top left, 0.1 is bottom left, 0.2 is right
+
+# Split right pane (0.2) vertically to create 0.3 (bottom right)
+tmux_cmd split-window -t "$session_name:0.2" -v -p 50
+# After splitting, pane 0.0 is top left, 0.1 is bottom left, pane 0.2 is top right, 0.3 is bottom right
+
+# Create startup scripts for each pane
 
 # Set up log pane (top right)
-tmux_cmd send-keys -t "$session_name:0.1" "echo '📊 Demo Logs'" Enter
-tmux_cmd send-keys -t "$session_name:0.1" "echo 'Logs will appear here as the demo runs...'" Enter
-tmux_cmd send-keys -t "$session_name:0.1" "tail -f '$log_file'" Enter
+cat > "/tmp/kemo-log-pane-$session_name.sh" << 'LOG_SCRIPT_EOF'
+#!/usr/bin/env bash
+clear
+echo '📊 Demo Logs'
+echo 'Logs will appear here as the demo runs...'
+echo
+if [[ -f "$KEMO_LOG_FILE" ]]; then
+    tail -f "$KEMO_LOG_FILE"
+else
+    echo "Log file not found: $KEMO_LOG_FILE"
+    while true; do sleep 1000; done
+fi
+LOG_SCRIPT_EOF
+chmod +x "/tmp/kemo-log-pane-$session_name.sh"
 
 # Set up Kubernetes status pane (bottom right)
-tmux_cmd send-keys -t "$session_name:0.2" "clear" Enter
-tmux_cmd send-keys -t "$session_name:0.2" "gum style --foreground cyan --bold '📊 Kubernetes Status'" Enter
-tmux_cmd send-keys -t "$session_name:0.2" "watch -n 2 kubectl get pods,svc,deploy -n '$demo' --no-headers 2>/dev/null || echo 'No resources found'" Enter
+cat > "/tmp/kemo-k8s-status-pane-$session_name.sh" << 'K8S_STATUS_SCRIPT_EOF'
+#!/usr/bin/env bash
+clear
+gum style --foreground cyan --bold '📊 Kubernetes Status'
+watch --interval 2 --no-title kubectl get pods,svc,deploy,events -n $KEMO_NS 2>/dev/null || echo 'No resources found'
+K8S_STATUS_SCRIPT_EOF
+chmod +x "/tmp/kemo-k8s-status-pane-$session_name.sh"
 
-# Set up main execution pane (left side)
-tmux_cmd send-keys -t "$session_name:0.0" "clear" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "gum style --foreground green --bold '🧪 Kemo Demo TUI'" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "gum style --foreground cyan 'Demo: $demo/$variant'" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "gum style --foreground yellow 'Step: $step'" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "echo" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "gum style --foreground magenta 'Press Ctrl-k ? for hotkeys help'" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "echo" Enter
+# Set up main execution pane (bottom left)
+cat > "/tmp/kemo-main-pane-$session_name.sh" << 'MAIN_SCRIPT_EOF'
+#!/usr/bin/env bash
+clear
+gum style --foreground green --bold '🧪 Kemo Demo TUI'
+gum style --foreground cyan "Demo: $KEMO_DEMO - $KEMO_VARIANT"
+gum style --foreground yellow "Step: $KEMO_STEP"
+echo
+gum style --foreground magenta 'Press Ctrl-k ? for hotkeys help'
+echo
 
-# Execute the demo step
-tmux_cmd send-keys -t "$session_name:0.0" "gum spin --spinner monkey --title 'Executing step...' -- sleep 1" Enter
+# Execute the demo step with progress
+gum spin --spinner monkey --title 'Executing step...' -- sleep 1
 
-# Run the actual command
+# Run the actual command and log it
 command_str="$*"
-tmux_cmd send-keys -t "$session_name:0.0" "$command_str 2>&1 | tee -a '$log_file'" Enter
+if $command_str 2>&1 | tee -a "$KEMO_LOG_FILE"; then
+    echo
+    gum style --foreground green "✅ Step \"$KEMO_STEP\" completed"
+    echo
+else
+    echo
+    gum style --foreground red "❌ Step \"$KEMO_STEP\" failed"
+    echo
+fi
 
-# Add completion message
-tmux_cmd send-keys -t "$session_name:0.0" "echo" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "gum style --foreground green '✅ Step \"$step\" completed'" Enter
-tmux_cmd send-keys -t "$session_name:0.0" "echo" Enter
+# Keep the shell open for interaction
+exec bash
+MAIN_SCRIPT_EOF
+chmod +x "/tmp/kemo-main-pane-$session_name.sh"
+
+# Set up metadata viewing pane (bottom left)
+cat > "/tmp/kemo-metadata-pane-$session_name.sh" << 'METADATA_SCRIPT_EOF'
+#!/usr/bin/env bash
+clear
+gum style --foreground green --bold 'TODO METADATA GOES HERE'
+while true; do sleep 1000; done
+
+METADATA_SCRIPT_EOF
+chmod +x "/tmp/kemo-metadata-pane-$session_name.sh"
+
+# Start processes in panes using respawn-pane
+tmux_cmd respawn-pane -k -t "$session_name:0.0" "/tmp/kemo-main-pane-$session_name.sh"
+tmux_cmd respawn-pane -k -t "$session_name:0.1" "/tmp/kemo-metadata-pane-$session_name.sh"
+tmux_cmd respawn-pane -k -t "$session_name:0.2" "/tmp/kemo-log-pane-$session_name.sh"
+tmux_cmd respawn-pane -k -t "$session_name:0.3" "/tmp/kemo-k8s-status-pane-$session_name.sh"
+
+# Mark main pane as active
+tmux_cmd select-pane -t "$session_name:0.0"
 
 # Launch the TUI
 gum style --foreground green --bold "🎬 Launching TUI for $demo - $variant"
@@ -199,7 +260,12 @@ tmux_cmd attach-session -t "$session_name"
 
 # Cleanup on exit
 log_clean ""
-log_clean "✅ Step '$step' session ended at $(date +"%Y-%m-%d %H:%M:%S")"
+current_time=$(date +"%Y-%m-%d %H:%M:%S")
+log_clean "✅ Step \"$step\" session ended at \"$current_time\""
 
-# Remove hotkey script
+# Remove temporary scripts
 rm -f "/tmp/kemo-hotkeys-$session_name.sh"
+rm -f "/tmp/kemo-log-pane-$session_name.sh"
+rm -f "/tmp/kemo-k8s-status-pane-$session_name.sh"
+rm -f "/tmp/kemo-main-pane-$session_name.sh"
+rm -f "/tmp/kemo-metadata-pane-$session_name.sh"

@@ -1,30 +1,24 @@
 #!/usr/bin/env bash
 
 demo_root="demos"
-log_enabled="false"
 debug_enabled="false"
 
 # Parse optional flags
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --log)
-      log_enabled="true"
-      shift
-      ;;
     --debug)
       debug_enabled="true"
       shift
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--log] [--debug]"
+      echo "Usage: $0 [--debug]"
       exit 1
       ;;
   esac
 done
 
 echo "Debug mode: $debug_enabled"
-echo "Logging enabled: $log_enabled"
 
 if [[ ! -d "$demo_root" ]]; then
   gum style --foreground red "❌ No demo directory found."
@@ -183,16 +177,11 @@ echo
 # 6. Advanced options
 advanced_options=$(gum choose --header "🛠️  Additional options (optional)" \
   "Run normally" \
-  "Enable verbose logging" \
   "Dry run (show commands only)" \
   "Skip cleanup on exit" \
   "Custom namespace")
 
 case "$advanced_options" in
-  "Enable verbose logging")
-    export KEMO_VERBOSE=true
-    gum style --foreground yellow "📝 Verbose logging enabled"
-    ;;
   "Dry run (show commands only)")
     export KEMO_DRY_RUN=true
     gum style --foreground cyan "🔍 Dry run mode enabled"
@@ -219,7 +208,6 @@ gum style --foreground cyan --border normal --margin "1 2" --padding "1 2" "
 📦 Demo: $demo
 🔧 Variant: $version  
 🏷️  Tags: $(yq e '.tags // [] | join(", ")' "$metadata_path")
-$(if [[ "$log_enabled" == "true" ]]; then echo "📝 Logging: Enabled"; fi)
 $(if [[ -n "${KEMO_NAMESPACE:-}" ]]; then echo "📂 Namespace: $KEMO_NAMESPACE"; fi)
 "
 
@@ -233,21 +221,8 @@ if gum confirm "🚀 Start the demo?"; then
   gum style --foreground green "🚀 GO!"
   echo
 
-  if [[ "$log_enabled" == "true" ]]; then
-    timestamp=$(date +"%Y%m%d_%H%M%S")
-    log_dir="logs/$demo/$version"
-    mkdir -p "$log_dir"
-    log_file="$log_dir/demo-$timestamp.log"
-    gum style --foreground cyan "📝 Logging output to: $log_file"
-    
-    # Progress bar while setting up logging
-    gum progress --from 0 --to 100 --delay 50ms --title "Setting up logging..." > /dev/null &
-    sleep 1
-    
-    just run-demo "$demo" "$version" 2>&1 | tee "$log_file"
-  else
-    just run-demo "$demo" "$version"
-  fi
+  # Run the demo
+  just run-demo "$demo" "$version"
 else
   gum style --foreground red "🛑 Demo canceled."
   echo

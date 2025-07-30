@@ -3,7 +3,7 @@ set shell := ["bash", "-cu"]
 k8s-provider := `if command -v orb &>/dev/null; then echo orbstack; else echo minikube; fi`
 
 default:
-    @just --summary
+    @just --choose
 
 # Preferred Kubernetes setup: OrbStack or fallback to Minikube
 kubernetes-setup:
@@ -71,7 +71,7 @@ start-orbstack:
 
 use-orbstack:
     @gum style --foreground cyan "🔗 Setting kubectl context to OrbStack..."
-    kubectl config use-context orbstack
+    @kubectl config use-context orbstack
     @gum style --foreground yellow "😴 Waiting for cluster to fully spin up..."
     @gum spin --spinner moon --title "Initializing cluster..." -- sleep 5
 
@@ -92,7 +92,7 @@ start-minikube:
 
 use-minikube:
     @gum style --foreground cyan "🔗 Setting kubectl context to Minikube..."
-    kubectl config use-context minikube
+    @kubectl config use-context minikube
 
 clean-minikube:
     @gum style --foreground yellow "🧹 Stopping and deleting Minikube..."
@@ -126,19 +126,16 @@ apply-manifests demo variant:
     fi
 
 select-demo:
-    @scripts/select-demo.sh --debug
-
-select-demo-and-log:
-    @scripts/select-demo.sh --log
+    @scripts/select-demo.sh
 
 run-demo demo variant:
     @gum style --foreground green --bold "🎬 Starting demo: {{demo}}/{{variant}}"
     @echo
-    just kubernetes-setup
-    just create-namespace {{demo}} {{variant}} {{k8s-provider}}
-    just apply-manifests {{demo}} {{variant}}
-    @scripts/run-step.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
-    @if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
+    @just kubernetes-setup
+    @just create-namespace {{demo}} {{variant}} {{k8s-provider}}
+    @just apply-manifests {{demo}} {{variant}}
+    scripts/run-step.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
+    if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
         echo; \
         if gum confirm "🧹 Clean up resources?"; then \
             just kubernetes-cleanup; \
@@ -153,7 +150,7 @@ list-tags:
 
 install-deps:
     @echo "🔧 Installing prerequisites for Kemo..."
-    @if [ "$(uname)" = "Darwin" ]; then \
+    if [ "$(uname)" = "Darwin" ]; then \
         echo "🍎 Detected macOS. Installing with brew..."; \
         brew install minikube kubectl gum yq tmux; \
     elif [ -f /etc/debian_version ]; then \
