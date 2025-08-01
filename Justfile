@@ -70,7 +70,7 @@ start-orbstack:
     @gum spin --spinner globe --title "Starting OrbStack..." -- orb start k8s && sleep 5
 
 use-orbstack:
-    @gum style --foreground cyan "🔗 Setting kubectl context to OrbStack..."
+    @gum spin --spinner dot --title "Setting kubectl context to OrbStack..." -- sleep 5
     @kubectl config use-context orbstack
     @gum style --foreground yellow "😴 Waiting for cluster to fully spin up..."
     @gum spin --spinner moon --title "Initializing cluster..." -- sleep 5

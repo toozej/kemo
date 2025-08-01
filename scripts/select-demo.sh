@@ -3,6 +3,9 @@
 demo_root="demos"
 debug_enabled="false"
 
+# Get the script directory for resolving relative paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Parse optional flags
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -131,13 +134,10 @@ metadata_path="${selected_key##*::}"
 gum style --foreground green "Selected: $demo/$version"
 echo
 
-# 4. Show Metadata in Pager
-gum spin --spinner dot --title "📖 Loading demo metadata..." -- sleep 0.5
-
-echo -e "📘 Demo Info (Press q to exit)\n" > /tmp/demo-meta.md
-echo -e "**🧪 Demo:** \`$demo/$version\`\n" >> /tmp/demo-meta.md
-yq e '.' "$metadata_path" | sed 's/^/    /' >> /tmp/demo-meta.md
-gum pager < /tmp/demo-meta.md
+# 4. Show Metadata using reusable script
+export KEMO_DEMO="$demo"
+export KEMO_VARIANT="$version"
+"$SCRIPT_DIR/kemo-metadata-pane.sh"
 
 # 5. Pre-flight checks
 echo "🔍 Running pre-flight checks..."
@@ -232,6 +232,3 @@ else
     exec "$0" "$@"
   fi
 fi
-
-# Cleanup temp files
-rm -f /tmp/demo-meta.md
