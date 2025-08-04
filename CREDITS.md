@@ -9,3 +9,11 @@ The initial idea for this project came when I was reading [this article](https:/
 ## LLMs
 - ChatGPT for initial implementation and questions along the way, including the "good" and "bad" hello-world demos
 - GitHub Copilot with GPT-4o for in-line help, refactoring, etc.
+
+## Kubernetes Setup
+### Orbstack
+- https://docs.orbstack.dev/kubernetes/
+
+### Kubernetes Dashboard
+- https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md
+- https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md

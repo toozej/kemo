@@ -27,16 +27,30 @@ case "$1" in
     read -n 1
     ;;
   k8s-dashboard)
-    gum style --foreground blue '🌐 Opening Kubernetes Dashboard...'
-    kubectl proxy --port=8001 >/dev/null 2>&1 &
+    gum style --foreground blue '🌐 Opening Kubernetes Dashboard via port-forwarding...'
+    kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443 >/dev/null 2>&1 &
     sleep 2
-    if command -v open >/dev/null; then
-      open 'http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/'
-    elif command -v xdg-open >/dev/null; then
-      xdg-open 'http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/'
-    else
-      gum style --foreground yellow '📋 Dashboard URL: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/'
+    dashboard_url='https://localhost:8443/'
+    token=$(kubectl -n kubernetes-dashboard create token dashboard-user 2>/dev/null)
+    if [[ -n "$token" ]]; then
+      if command -v pbcopy >/dev/null; then
+        echo "$token" | pbcopy
+        gum style --foreground green '✅ Bearer token copied to clipboard (pbcopy)'
+      elif command -v xclip >/dev/null; then
+        echo "$token" | xclip -selection clipboard
+        gum style --foreground green '✅ Bearer token copied to clipboard (xclip)'
+      else
+        gum style --foreground yellow "📋 Bearer token: $token"
+      fi
     fi
+    if command -v open >/dev/null; then
+      open "$dashboard_url"
+    elif command -v xdg-open >/dev/null; then
+      xdg-open "$dashboard_url"
+    else
+      gum style --foreground yellow "📋 Dashboard URL: $dashboard_url"
+    fi
+    gum style --foreground cyan 'Paste the token into the dashboard login screen.'
     ;;
   logs)
     kubectl logs -f -n "$KEMO_NS" 2>/dev/null || {
