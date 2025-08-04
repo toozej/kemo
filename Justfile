@@ -37,28 +37,28 @@ kubectl-cleanup:
     set -euo pipefail
     gum style --foreground yellow "🧼 Cleaning up custom kubectl contexts..."
     current="$(kubectl config current-context 2>/dev/null || echo '')"
-    if [[ -z "$current" ]]; then
+    if [[ -n "$current" ]]; then
+        gum style --foreground yellow "🔄 Unsetting current context: $current"
+        kubectl config unset current-context
+    else
         gum style --foreground yellow "⚠️  No current context set. Proceeding to delete all contexts."
     fi
     gum spin --spinner dot --title "Finding contexts..." -- sleep 0.5
-    current="$(kubectl config current-context 2>/dev/null || echo '')"
     for ctx in $(kubectl config get-contexts -o name); do
-        if [[ "$ctx" != "$current" ]]; then
-            gum style --foreground red "🗑️  Deleting context: $ctx";
-            kubectl config delete-context "$ctx";
-        else
-            gum style --foreground green "⏭️  Skipping current context: $ctx"
-        fi
+        gum style --foreground red "🗑️  Deleting context: $ctx";
+        kubectl config delete-context "$ctx";
     done
     gum style --foreground yellow "✅ Cleanup of custom kubectl contexts complete"
     if gum confirm "Also delete unused users and clusters?"; then
         gum style --foreground yellow "🧹 Deleting users..."
-        for user in $(kubectl config get-users | tail -n1); do
+        for user in $(kubectl config get-users | tail -n +2); do
+            if [[ "$user" == "NAME" || -z "$user" ]]; then continue; fi
             gum style --foreground red "🗑️  Deleting user: $user"
             kubectl config delete-user "$user"
         done
         gum style --foreground yellow "🧹 Deleting clusters..."
-        for cluster in $(kubectl config get-clusters | tail -n1); do
+        for cluster in $(kubectl config get-clusters | tail -n +2); do
+            if [[ "$cluster" == "NAME" || -z "$cluster" ]]; then continue; fi
             gum style --foreground red "🗑️  Deleting cluster: $cluster"
             kubectl config delete-cluster "$cluster"
         done
@@ -67,13 +67,14 @@ kubectl-cleanup:
 
 start-orbstack:
     @gum style --foreground green "🚀 Starting OrbStack Kubernetes..."
-    @gum spin --spinner globe --title "Starting OrbStack..." -- orb start k8s && sleep 5
+    @gum spin --spinner globe --title "Starting OrbStack..." -- orb start k8s
+    @gum spin --spinner dot --title "Waiting for Kubernetes cluster..." -- bash -c 'for i in {1..60}; do kubectl cluster-info &>/dev/null && exit 0; sleep 1; done; exit 1'
 
 use-orbstack:
-    @gum spin --spinner dot --title "Setting kubectl context to OrbStack..." -- sleep 5
+    @gum spin --spinner dot --title "Waiting for OrbStack context..." -- bash -c 'for i in {1..30}; do kubectl config get-contexts -o name | grep -q "^orbstack$" && exit 0; sleep 1; done; exit 1'
     @kubectl config use-context orbstack
     @gum style --foreground yellow "😴 Waiting for cluster to fully spin up..."
-    @gum spin --spinner moon --title "Initializing cluster..." -- sleep 5
+    @gum spin --spinner moon --title "Initializing cluster..." -- bash -c 'for i in {1..30}; do kubectl get nodes --context=orbstack &>/dev/null && exit 0; sleep 1; done; exit 1'
 
 clean-orbstack:
     @gum style --foreground yellow "🧼 Stopping OrbStack Kubernetes..."
@@ -103,7 +104,7 @@ clean-minikube:
 create-namespace demo variant k8s-provider:
     #!/usr/bin/env bash
     set -euo pipefail
-    ns="{{demo}}-{{variant}}"
+    ns="${KEMO_NAMESPACE:-{{demo}}-{{variant}}}"
     gum style --foreground cyan "📂 Creating namespace '$ns'..."
     gum spin --spinner dot --title "Setting up namespace..." -- sleep 0.5
     kubectl get namespace "$ns" >/dev/null 2>&1 || kubectl create namespace "$ns"
@@ -114,7 +115,7 @@ create-namespace demo variant k8s-provider:
 apply-manifests demo variant:
     #!/usr/bin/env bash
     set -euo pipefail
-    ns="{{demo}}-{{variant}}"
+    ns="${KEMO_NAMESPACE:-{{demo}}-{{variant}}}"
     gum style --foreground cyan "📂 Applying manifests for '{{demo}}/{{variant}}'..."
     if [[ "${KEMO_DRY_RUN:-false}" == "true" ]]; then
         gum style --foreground blue "🔍 DRY RUN: Would execute:"
@@ -144,7 +145,7 @@ run-demo demo variant:
 
 list-tags:
     @gum style --foreground cyan "Available tags:"
-    @find demos -name metadata.yaml -exec yq e '.tags // [] | .[]' {} \; | sort | uniq | while read tag; do \
+    @find demos -name metadata.yaml -exec yq e '.tags // [] | .[]' {} \; | grep -v '^$' | sort -u | while read tag; do \
         gum style --foreground green "🏷️  $$tag"; \
     done
 

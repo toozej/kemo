@@ -59,7 +59,6 @@ case "$1" in
     [[ -n "$resource" ]] && kubectl describe -n "$KEMO_NS" "$resource"
     ;;
   help)
-    clear
     gum style --foreground cyan --bold '🔑 Kemo TUI Hotkeys'
     echo
     gum style --foreground white 'Ctrl-k r : Restart demo'
@@ -86,3 +85,5 @@ case "$1" in
     gum style --foreground red "Unknown action: $1"
     ;;
 esac
+
+exit 0
