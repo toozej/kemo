@@ -28,6 +28,13 @@ session_name="kemo-$demo-$variant-$(date +%s)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Set up remaining environment variables
+export KEMO_DEMO="$demo"
+export KEMO_VARIANT="$variant"
+export KEMO_STEP="$step"
+export KEMO_LOG_FILE="$log_file"
+export KEMO_NS="$demo-$variant"
+
 # Helper function to ensure tmux uses the Kemo Tmux config file
 # Usage: tmux_cmd <tmux arguments>
 tmux_cmd() {
@@ -72,6 +79,11 @@ tmux_cmd set-environment -t "$session_name" KEMO_NS "$demo-$variant"
 tmux_cmd set-environment -t "$session_name" KEMO_STEP "$step"
 tmux_cmd set-environment -t "$session_name" KEMO_LOG_FILE "$log_file"
 tmux_cmd set-environment -t "$session_name" KEMO_SESSION "$session_name"
+tmux_cmd set-environment -t "$session_name" SCRIPT_DIR "$SCRIPT_DIR"
+tmux_cmd set-environment -t "$session_name" PROJECT_ROOT "$PROJECT_ROOT"
+
+# Initialize the demo stepper
+"$SCRIPT_DIR/demo-stepper.sh" init
 
 # Set up initial pane layout
 tmux_cmd select-window -t "$session_name:0"
@@ -110,3 +122,4 @@ tmux_cmd attach-session -t "$session_name"
 log_clean ""
 current_time=$(date +"%Y-%m-%d %H:%M:%S")
 log_clean "✅ Step \"$step\" session ended at \"$current_time\""
+rm -f demos/$demo/$variant/.logs/*.tmp

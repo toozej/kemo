@@ -8,14 +8,13 @@
 
 case "$1" in
   restart)
-    gum confirm '🔄 Restart demo?' && {
-      kubectl delete all --all -n "$KEMO_NS" 2>/dev/null || true
-      just apply-manifests "$KEMO_DEMO" "$KEMO_VARIANT"
-    }
+    gum style --foreground yellow '🔄 Restarting demo'
+    kubectl delete all --all -n "$KEMO_NS" 2>/dev/null || true
+    just apply-manifests "$KEMO_DEMO" "$KEMO_VARIANT"
+    scripts/demo-stepper.sh reset
     ;;
   next-step)
-    gum style --foreground green '➡️  Moving to next step...'
-    # This would be handled by the main demo runner
+    scripts/demo-stepper.sh next
     ;;
   k8s-status)
     clear
@@ -76,7 +75,7 @@ case "$1" in
     gum style --foreground cyan --bold '🔑 Kemo TUI Hotkeys'
     echo
     gum style --foreground white 'Ctrl-k r : Restart demo'
-    gum style --foreground white 'Ctrl-k n : Next step (if available)'  
+    gum style --foreground white 'Ctrl-k n : Execute next demo step'
     gum style --foreground white 'Ctrl-k s : Show Kubernetes status'
     gum style --foreground white 'Ctrl-k d : Open Kubernetes dashboard'
     gum style --foreground white 'Ctrl-k u : Open application URL'

@@ -153,8 +153,8 @@ run-demo demo variant:
     @just kubernetes-setup
     @just create-namespace {{demo}} {{variant}} {{k8s-provider}}
     @just apply-manifests {{demo}} {{variant}}
-    scripts/run-demo.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
-    if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
+    @scripts/run-demo.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
+    @if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
         echo; \
         if gum confirm "🧹 Clean up resources?"; then \
             just kubernetes-cleanup; \
@@ -169,7 +169,7 @@ list-tags:
 
 install-deps:
     @echo "🔧 Installing prerequisites for Kemo..."
-    if [ "$(uname)" = "Darwin" ]; then \
+    @if [ "$(uname)" = "Darwin" ]; then \
         echo "🍎 Detected macOS. Installing with brew..."; \
         brew install minikube kubectl gum yq tmux helm; \
     elif [ -f /etc/debian_version ]; then \

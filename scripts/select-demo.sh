@@ -21,8 +21,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-echo "Debug mode: $debug_enabled"
-
 if [[ ! -d "$demo_root" ]]; then
   gum style --foreground red "❌ No demo directory found."
   exit 1
@@ -141,37 +139,7 @@ export KEMO_VARIANT="$version"
 
 # 5. Pre-flight checks
 echo "🔍 Running pre-flight checks..."
-
-# Check if kubectl is available
-if ! command -v kubectl >/dev/null; then
-  gum style --foreground red "❌ kubectl not found"
-  if ! gum confirm "Continue anyway?"; then
-    exit 1
-  fi
-else
-  gum style --foreground green "✅ kubectl available"
-fi
-
-# Check if cluster is accessible
-if kubectl cluster-info >/dev/null 2>&1; then
-  gum style --foreground green "✅ Kubernetes cluster accessible"
-else
-  gum style --foreground yellow "⚠️  Kubernetes cluster not accessible"
-  if ! gum confirm "Continue anyway?"; then
-    exit 1
-  fi
-fi
-
-# Check if tmux is available for TUI
-if ! command -v tmux >/dev/null; then
-  gum style --foreground red "❌ tmux not found - TUI will not be available"
-  if ! gum confirm "Continue without TUI?"; then
-    exit 1
-  fi
-else
-  gum style --foreground green "✅ tmux available - TUI enabled"
-fi
-
+just health-check
 echo
 
 # 6. Advanced options
@@ -212,13 +180,7 @@ $(if [[ -n "${KEMO_NAMESPACE:-}" ]]; then echo "📂 Namespace: $KEMO_NAMESPACE"
 "
 
 if gum confirm "🚀 Start the demo?"; then
-  # Show countdown
-  gum style --foreground green --bold "🎬 Starting demo in..."
-  for i in {3..1}; do
-    gum style --foreground yellow "$i..."
-    sleep 1
-  done
-  gum style --foreground green "🚀 GO!"
+  gum style --foreground green --bold "🎬 Starting demo ..."
   echo
 
   # Run the demo

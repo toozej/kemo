@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Kemo Demo Stepper - Execute demo run.sh scripts step-by-step
 
-set -euo pipefail
-
 # Check if required environment variables are set
 : "${KEMO_DEMO:?Environment variable KEMO_DEMO must be set}"
 : "${KEMO_VARIANT:?Environment variable KEMO_VARIANT must be set}" 
@@ -28,7 +26,6 @@ init_stepper() {
     
     # Parse the run.sh script into executable sections
     # Each section is separated by blank lines or comments starting with #
-    local temp_file=$(mktemp)
     local section=""
     local section_num=0
     
@@ -72,7 +69,6 @@ init_stepper() {
     echo "0" > "$STATE_FILE"
     
     gum style --foreground green "✅ Stepper initialized with $section_num sections"
-    rm -f "$temp_file"
 }
 
 # Get current step number
@@ -139,27 +135,23 @@ next_step() {
     gum style --foreground white "Command:"
     echo "$command" | gum style --foreground yellow --border normal --margin "0 2"
     echo
-    
-    if gum confirm "Execute this step?"; then
-        gum style --foreground blue "🚀 Executing..."
-        
-        # Execute the command in the demo directory context
-        if (
-            cd "$DEMO_DIR"
-            # Use eval to properly handle complex bash constructs
-            eval "$command"
-        ) 2>&1 | tee -a "$KEMO_LOG_FILE"; then
-            gum style --foreground green "✅ Step $((current_step + 1)) completed successfully"
-            set_current_step $((current_step + 1))
-        else
-            gum style --foreground red "❌ Step $((current_step + 1)) failed"
-            echo "Step $((current_step + 1)) failed with exit code $?" >> "$KEMO_LOG_FILE"
-        fi
+
+    gum style --foreground blue "🚀 Executing..."
+
+    # Execute the command in the demo directory context
+    if (
+        cd "$DEMO_DIR"
+        # Use eval to properly handle complex bash constructs
+        eval "$command"
+    ) 2>&1 | tee -a "$KEMO_LOG_FILE"; then
+        gum style --foreground green "✅ Step $((current_step + 1)) completed successfully"
+        set_current_step $((current_step + 1))
     else
-        gum style --foreground yellow "⏭️  Step $((current_step + 1)) skipped"
+        gum style --foreground red "❌ Step $((current_step + 1)) failed"
+        echo "Step $((current_step + 1)) failed with exit code $?" >> "$KEMO_LOG_FILE"
         set_current_step $((current_step + 1))
     fi
-    
+
     echo
     if [[ $((current_step + 1)) -lt $total_steps ]]; then
         gum style --foreground cyan "💡 Press 'Ctrl-k n' for next step"
@@ -181,7 +173,6 @@ show_status() {
     
     gum style --foreground cyan --bold "📊 Demo Stepper Status"
     echo
-    gum style --foreground white "Demo: $KEMO_DEMO/$KEMO_VARIANT"
     gum style --foreground white "Current Step: $((current_step + 1)) of $total_steps"
     
     if [[ $total_steps -gt 0 ]]; then
@@ -230,8 +221,5 @@ main() {
             ;;
     esac
 }
-
-# Handle cleanup on script exit
-trap cleanup_stepper EXIT
 
 main "$@"
