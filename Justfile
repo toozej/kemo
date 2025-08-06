@@ -153,7 +153,7 @@ run-demo demo variant:
     @just kubernetes-setup
     @just create-namespace {{demo}} {{variant}} {{k8s-provider}}
     @just apply-manifests {{demo}} {{variant}}
-    scripts/run-step.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
+    scripts/run-demo.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
     if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
         echo; \
         if gum confirm "🧹 Clean up resources?"; then \
