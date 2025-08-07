@@ -152,7 +152,6 @@ run-demo demo variant:
     @echo
     @just kubernetes-setup
     @just create-namespace {{demo}} {{variant}} {{k8s-provider}}
-    @just apply-manifests {{demo}} {{variant}}
     @scripts/run-demo.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
     @if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
         echo; \
