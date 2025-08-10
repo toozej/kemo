@@ -11,6 +11,7 @@ Kemo is pronounced like "Chem-Oh", or like "Ken-Oh" with an "m" instead of "n" a
 - **Interactive TUI**: Full tmux-based terminal interface with hotkeys
 - **Demo Browser**: Interactive demo selector using `gum` with fuzzy search
 - **Multi-panel Interface**: Split-screen views for logs, resource monitoring, and execution
+- **Step-by-Step Execution**: Controlled demo progression with manual step execution
 - **Intelligent Logging**: Timestamped logs with clean formatting for files
 - **Tag Filtering**: Organize and find demos by tags
 - **Variant System**: Compare working (`good/`) vs broken (`bad/`) scenarios
@@ -72,7 +73,7 @@ All hotkeys use the prefix `Ctrl-k` followed by a command key:
 
 #### Demo Control
 - **`Ctrl-k r`** - Restart demo (deletes resources and reapplies)
-- **`Ctrl-k n`** - Next step (if demo supports multi-step execution)
+- **`Ctrl-k n`** - Execute next demo step
 - **`Ctrl-k q`** - Quit demo (with confirmation)
 - **`Ctrl-k ?`** - Show hotkeys help
 
@@ -185,7 +186,7 @@ observations:
 # Demo Operations
 ./kemo select-demo              # Interactive demo selector
 ./kemo browse-demos             # Demo browser interface
-./kemo run-demo <demo> <variant> # Run specific demo
+./kemo run-demo <demo> <variant> # Run demo with step-by-step control
 ./kemo list-tags                # Show all available tags
 
 # Environment Management  
@@ -249,17 +250,31 @@ logs/
      - "Expected behavior 1"
    ```
 
-4. **Add Execution Script** (optional):
+4. **Add Execution Script**:
+   Create a `run.sh` that will be executed step-by-step. The stepper will automatically detect sections separated by blank lines or comments starting with `#`.
+
+   Example structure:
    ```bash
-   # demos/my-demo/good/run.sh
    #!/usr/bin/env bash
-   echo "Custom demo steps..."
+
+   # Section 1 - Apply manifests
+   kubectl apply -n "$KEMO_NS" --kustomize='.'
+   gum style --foreground green "✅ Manifests applied"
+
+   # Section 2 - Verify deployment
    kubectl rollout status deployment/my-app
+
+   # Section 3 - Show resources (separated by blank line)
+   kubectl get pods,svc -n "$KEMO_NS"
+
+   # Final section
+   echo "🎉 Press Ctrl-k n to proceed through steps"
    ```
 
 5. **Test Your Demo**:
    ```bash
    ./kemo run-demo my-demo good
+   # Use Ctrl-k n to execute each step
    ```
 
 ## 🛠️ Troubleshooting
