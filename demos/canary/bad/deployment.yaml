@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary-stable
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canary
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: canary
+        version: stable
+    spec:
+      containers:
+      - name: stable
+        image: nginx:stable
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canary
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: canary
+        version: canary
+    spec:
+      containers:
+      - name: canary
+        image: nginx:mainline
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+          items:
+          - key: nginx.conf
+            path: nginx.conf

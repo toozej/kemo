@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary-stable-service
+spec:
+  selector:
+    app: canary
+    version: stable
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary-canary-service
+spec:
+  selector:
+    app: canary
+    version: canary
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

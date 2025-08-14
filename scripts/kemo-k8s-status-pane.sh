@@ -6,4 +6,4 @@
 
 clear
 gum style --foreground cyan --bold '📊 Kubernetes Status'
-watch --interval 2 --no-title "kubectl get pods,svc,deploy,events -n $KEMO_NS 2>/dev/null || echo 'No resources found'"
+watch --interval 2 --no-title "kubectl get pods,deploy,events -n $KEMO_NS 2>/dev/null || echo 'No resources found'"

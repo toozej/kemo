@@ -5,14 +5,19 @@ The initial idea for this project came when I was reading [this article](https:/
 
 ## Demos
 - https://weblog.plexobject.com/archives/6869
+- https://medium.com/@muppedaanvesh/implementing-canary-deployment-in-kubernetes-0be4bc1e1aca
 
 ## LLMs
 - ChatGPT for initial implementation and questions along the way, including the "good" and "bad" hello-world demos
 - GitHub Copilot with GPT-4o for in-line help, refactoring, etc.
+- Kilo Code VSCode plugin for in-line help, demo Kubernetes manifest generation, etc.
 
 ## Kubernetes Setup
 ### Orbstack
 - https://docs.orbstack.dev/kubernetes/
+
+### Ingress-NGINX
+- https://kubernetes.github.io/ingress-nginx/deploy/#quick-start
 
 ### Kubernetes Dashboard
 - https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md

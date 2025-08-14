@@ -12,13 +12,13 @@ kubernetes-setup:
         gum style --foreground green '🟢 OrbStack detected, using OrbStack'; \
         just start-orbstack; \
         just use-orbstack; \
-        just install-traefik; \
+        just install-ingress-nginx; \
         just install-kubernetes-dashboard; \
     else \
         gum style --foreground blue '🔵 OrbStack not found, falling back to Minikube'; \
         just start-minikube; \
         just use-minikube; \
-        just install-traefik; \
+        just install-ingress-nginx; \
         just install-kubernetes-dashboard; \
     fi
 
@@ -69,13 +69,16 @@ kubectl-cleanup:
 start-orbstack:
     @gum style --foreground green "🚀 Starting OrbStack Kubernetes..."
     @gum spin --spinner globe --title "Starting OrbStack..." -- orb start k8s
-    @gum spin --spinner dot --title "Waiting for Kubernetes cluster..." -- bash -c 'for i in {1..60}; do kubectl cluster-info &>/dev/null && exit 0; sleep 1; done; exit 1'
+    @gum spin --spinner dot --title "Waiting for Kubernetes cluster..." -- \
+        bash -c 'for i in {1..60}; do kubectl cluster-info &>/dev/null && exit 0; sleep 1; done; exit 1'
 
 use-orbstack:
-    @gum spin --spinner dot --title "Waiting for OrbStack context..." -- bash -c 'for i in {1..30}; do kubectl config get-contexts -o name | grep -q "^orbstack$" && exit 0; sleep 1; done; exit 1'
+    @gum spin --spinner dot --title "Waiting for OrbStack context..." -- \
+        bash -c 'for i in {1..30}; do kubectl config get-contexts -o name | grep -q "^orbstack$" && exit 0; sleep 1; done; exit 1'
     @kubectl config use-context orbstack
     @gum style --foreground yellow "😴 Waiting for cluster to fully spin up..."
-    @gum spin --spinner moon --title "Initializing cluster..." -- bash -c 'for i in {1..30}; do kubectl get nodes --context=orbstack &>/dev/null && exit 0; sleep 1; done; exit 1'
+    @gum spin --spinner moon --title "Initializing cluster..." -- \
+        bash -c 'for i in {1..30}; do kubectl get nodes --context=orbstack &>/dev/null && exit 0; sleep 1; done; exit 1'
     @gum style --foreground green "✅ OrbStack cluster ready"
 
 clean-orbstack:
@@ -97,7 +100,8 @@ use-minikube:
     @gum style --foreground cyan "🔗 Setting kubectl context to Minikube..."
     @kubectl config use-context minikube
     @gum style --foreground yellow "😴 Waiting for cluster to fully spin up..."
-    @gum spin --spinner moon --title "Initializing cluster..." -- bash -c 'for i in {1..30}; do kubectl get nodes --context=minikube &>/dev/null && exit 0; sleep 1; done; exit 1'
+    @gum spin --spinner moon --title "Initializing cluster..." -- \
+        bash -c 'for i in {1..30}; do kubectl get nodes --context=minikube &>/dev/null && exit 0; sleep 1; done; exit 1'
     @gum style --foreground green "✅ Minikube cluster ready"
 
 clean-minikube:
@@ -106,18 +110,25 @@ clean-minikube:
         gum spin --spinner dot --title "Deleting Minikube..." -- minikube delete; \
     fi
 
-install-traefik:
-    @gum style --foreground cyan "🔧 Installing Traefik via Helm..."
-    @gum spin --spinner dot --title "Adding Traefik repo..." -- helm repo add traefik https://traefik.github.io/charts
-    @gum spin --spinner dot --title "Updating Helm repos..." -- helm repo update
-    @gum spin --spinner dot --title "Installing Traefik..." -- helm upgrade --install traefik traefik/traefik
+install-ingress-nginx:
+    @gum style --foreground cyan "🔧 Installing Ingress-NGINX via Helm..."
+    @gum spin --spinner dot --title "Installing Ingress-NGINX..." -- \
+        helm upgrade --install ingress-nginx ingress-nginx \
+        --repo https://kubernetes.github.io/ingress-nginx \
+        --namespace ingress-nginx --create-namespace
+    @gum spin --spinner dot --title "Waiting for Ingress-NGINX to be ready..." -- \
+        kubectl wait -n ingress-nginx --for=condition=Ready pod -l app.kubernetes.io/component=controller --timeout=120s
 
 install-kubernetes-dashboard:
     @gum style --foreground cyan "🔧 Installing Kubernetes Dashboard via Helm..."
-    @gum spin --spinner dot --title "Adding dashboard repo..." -- helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
-    @gum spin --spinner dot --title "Updating Helm repos..." -- helm repo update
-    @gum spin --spinner dot --title "Installing dashboard..." -- helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard  --create-namespace --namespace kubernetes-dashboard
-    @gum spin --spinner dot --title "Configuring dashboard-user..." -- kubectl apply --namespace kubernetes-dashboard -f ./manifests/kubernetes-dashboard-sa.yaml && sleep 1
+    @gum spin --spinner dot --title "Adding dashboard repo..." -- \
+        helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+    @gum spin --spinner dot --title "Updating Helm repos..." -- \
+        helm repo update
+    @gum spin --spinner dot --title "Installing dashboard..." -- \
+        helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard  --create-namespace --namespace kubernetes-dashboard
+    @gum spin --spinner dot --title "Configuring dashboard-user..." -- \
+        kubectl apply --namespace kubernetes-dashboard -f ./manifests/kubernetes-dashboard-sa.yaml && sleep 1
 
 create-namespace demo variant k8s-provider:
     #!/usr/bin/env bash

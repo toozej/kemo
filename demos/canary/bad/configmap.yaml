@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    worker_processes  1;
+
+    events {
+        worker_connections  1024;
+    }
+
+    http {
+        include       mime.types;
+        default_type  application/octet-stream;
+        sendfile        on;
+
+        server {
+            listen 80;
+            server_name _;
+
+            location / {
+                root   /usr/share/nginx/html;
+                index  index.html;
+            }
+
+            location = /nginx-version {
+                default_type text/plain;
+                return 200 "$nginx_version\n";
+            }
+        }
+    }

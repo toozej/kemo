@@ -58,14 +58,18 @@ case "$1" in
     }
     ;;
   open-url)
-    gum style --foreground blue '🌐 Opening Kubernetes Service URL ...'
-    if command -v open >/dev/null; then
-      open "http://$KEMO_DEMO.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local"
-    elif command -v xdg-open >/dev/null; then
-      xdg-open "http://$KEMO_DEMO.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local"
-    else
-      gum style --foreground yellow "📋 Kubernetes Service URL: http://$KEMO_DEMO.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local"
-    fi
+    gum style --foreground blue '🌐 Opening Kubernetes Service URLs ...'
+    svc_names=$(kubectl get svc -n "$KEMO_NS" -o jsonpath='{.items[*].metadata.name}')
+    for svc_name in $svc_names; do
+      url="http://$svc_name.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local/$KEMO_URL_PATH"
+      if command -v open >/dev/null; then
+        open "$url"
+      elif command -v xdg-open >/dev/null; then
+        xdg-open "$url"
+      else
+        gum style --foreground yellow "📋 Kubernetes Service URL: $url"
+      fi
+    done
     ;;
   describe)
     resource=$(kubectl get pods,svc,deploy -n "$KEMO_NS" -o name 2>/dev/null | gum choose --header '📋 Select resource to describe')
