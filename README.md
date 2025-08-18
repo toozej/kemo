@@ -21,18 +21,31 @@ Kemo is pronounced like "Chem-Oh", or like "Ken-Oh" with an "m" instead of "n" a
 
 ## 🚀 Quick Start
 
+Run this one-liner to install `just`, clone the repo, and get started browsing demos:
+
 ```bash
-# Interactive demo selection
-./kemo select-demo
+if ! command -v just &> /dev/null; then echo "Installing Just..."; if command -v brew &> /dev/null; then brew install just; elif command -v apt &> /dev/null; then sudo apt update && sudo apt install -y just; elif command -v dnf &> /dev/null; then sudo dnf install -y just; else cargo install just; fi; fi && git clone https://github.com/toozej/kemo.git && cd kemo && just install-deps && just health-check && just browse-demos
+```
 
-# Run specific demo
-./kemo run-demo hello-world good
+## 🎮 Usage and Available Commands
 
-# Browse all demos
-./kemo browse-demos
+The `kemo` script is a wrapper around `just`. You can see all available commands by running `just --list` or `kemo --list`.
 
-# Check system health
-./kemo health-check
+```bash
+# Demo Operations
+./kemo select-demo               # Interactive demo selector
+./kemo browse-demos              # Demo browser interface
+./kemo run-demo <demo> <variant> # Run demo with step-by-step control
+./kemo list-tags                 # Show all available tags
+
+# Environment Management  
+./kemo kubernetes-setup          # Setup K8s (OrbStack/Minikube)
+./kemo kubernetes-cleanup        # Clean up K8s resources
+./kemo kubectl-cleanup           # Clean kubectl contexts
+./kemo health-check              # Validate environment
+
+# Utilities
+./kemo install-deps              # Install all prerequisites
 ```
 
 ## 📋 Prerequisites
@@ -180,25 +193,6 @@ observations:
   - "Service routes traffic correctly"
 ```
 
-## 🔧 Available Commands
-
-```bash
-# Demo Operations
-./kemo select-demo              # Interactive demo selector
-./kemo browse-demos             # Demo browser interface
-./kemo run-demo <demo> <variant> # Run demo with step-by-step control
-./kemo list-tags                # Show all available tags
-
-# Environment Management  
-./kemo kubernetes-setup         # Setup K8s (OrbStack/Minikube)
-./kemo kubernetes-cleanup       # Clean up K8s resources
-./kemo health-check            # Validate environment
-
-# Utilities
-./kemo install-deps            # Install all prerequisites
-./kemo kubectl-cleanup         # Clean kubectl contexts
-```
-
 ## 📝 Logging
 
 ### Automatic Logging
@@ -281,14 +275,6 @@ logs/
 
 ### Common Issues
 
-**"tmux not found"**
-```bash
-# Install tmux
-brew install tmux          # macOS
-sudo apt install tmux     # Ubuntu/Debian
-sudo dnf install tmux     # RHEL/Fedora
-```
-
 **"kubectl cluster not accessible"**
 ```bash
 # Setup cluster
@@ -319,7 +305,7 @@ minikube start
 1. Fork the repository
 2. Create a feature branch
 3. Add your demo following the structure above
-4. Test with `./kemo run-demo your-demo good`
+4. Test with `./kemo run-demo <your-demo> <variant>`
 5. Submit a Pull Request
 
 ### Demo Guidelines

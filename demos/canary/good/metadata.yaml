@@ -2,7 +2,7 @@ name: Canary Testing Demo
 description: |
   A demo for canary deployment in Kubernetes, showcasing a stable and canary version of an NGINX deployment.
 source: https://medium.com/@muppedaanvesh/implementing-canary-deployment-in-kubernetes-0be4bc1e1aca
-tags: [canary, deployment, nginx, good]
+tags: [canary, deployment, nginx, configmap, good]
 objectives:
   - Deploy a stable and canary version of an NGINX deployment
   - Use a service to load balance traffic between the stable and canary deployments
