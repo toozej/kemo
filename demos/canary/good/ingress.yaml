@@ -2,10 +2,18 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: canary-stable-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
-  ingressClassName: nginx
+  tls:
+  - hosts:
+    - good.canary.demo.local
+    secretName: demo-tls
   rules:
-  - host: canary.k8s.orb.local
+  - host: good.canary.demo.local
     http:
       paths:
       - pathType: Prefix
@@ -21,12 +29,19 @@ kind: Ingress
 metadata:
   name: canary-canary-ingress
   annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/canary: "true"
     nginx.ingress.kubernetes.io/canary-weight: "30"
 spec:
-  ingressClassName: nginx
+  tls:
+  - hosts:
+    - good.canary.demo.local
+    secretName: demo-tls
   rules:
-  - host: canary.k8s.orb.local
+  - host: good.canary.demo.local
     http:
       paths:
       - pathType: Prefix

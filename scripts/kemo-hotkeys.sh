@@ -26,10 +26,8 @@ case "$1" in
     read -n 1
     ;;
   k8s-dashboard)
-    gum style --foreground blue '🌐 Opening Kubernetes Dashboard via port-forwarding...'
-    kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443 >/dev/null 2>&1 &
-    sleep 2
-    dashboard_url='https://localhost:8443/'
+    gum style --foreground blue '🌐 Opening Kubernetes Dashboard via HTTPS ingress...'
+    dashboard_url='https://dashboard.demo.local/'
     token=$(kubectl -n kubernetes-dashboard create token dashboard-user 2>/dev/null)
     if [[ -n "$token" ]]; then
       if command -v pbcopy >/dev/null; then
@@ -58,18 +56,16 @@ case "$1" in
     }
     ;;
   open-url)
-    gum style --foreground blue '🌐 Opening Kubernetes Service URLs ...'
-    svc_names=$(kubectl get svc -n "$KEMO_NS" -o jsonpath='{.items[*].metadata.name}')
-    for svc_name in $svc_names; do
-      url="http://$svc_name.$KEMO_DEMO-$KEMO_VARIANT.svc.cluster.local/$KEMO_URL_PATH"
-      if command -v open >/dev/null; then
-        open "$url"
-      elif command -v xdg-open >/dev/null; then
-        xdg-open "$url"
-      else
-        gum style --foreground yellow "📋 Kubernetes Service URL: $url"
-      fi
-    done
+    gum style --foreground blue '🌐 Opening demo URL ...'
+    # Use HTTPS ingress URL instead of cluster-local service
+    url="https://$KEMO_VARIANT.$KEMO_DEMO.demo.local/"
+    if command -v open >/dev/null; then
+      open "$url"
+    elif command -v xdg-open >/dev/null; then
+      xdg-open "$url"
+    else
+      gum style --foreground yellow "📋 Demo URL: $url"
+    fi
     ;;
   describe)
     resource=$(kubectl get pods,svc,deploy -n "$KEMO_NS" -o name 2>/dev/null | gum choose --header '📋 Select resource to describe')

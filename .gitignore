@@ -1,4 +1,5 @@
 # environment variables
 .env
 
-.vscode/
+# TLS certificates
+certs/*.pem

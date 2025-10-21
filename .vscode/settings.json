@@ -1,0 +1,9 @@
+{
+    "yaml.schemas": {
+        "https://www.schemastore.org/yamllint.json": [
+            "demos/*/*/metadata.yaml",
+            "demos/**/metadata.yaml",
+            "**/metadata.yaml"
+        ]
+    }
+}
