@@ -1,3 +1,4 @@
+---
 name: Hello World - Broken
 description: |
   A broken version of the same deployment where the service is misconfigured.
@@ -10,4 +11,3 @@ observations:
   - Pod runs fine, but curl fails
   - Logs may still show server running
   - Service selector may not match
-

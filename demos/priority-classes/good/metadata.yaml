@@ -1,0 +1,16 @@
+---
+name: Priority Classes - Working
+description: |
+  Demonstrates Kubernetes PriorityClass usage with two NGINX deployments assigned different
+  priorities. Exposes both via a single HTTPS Ingress with path-based routing to show the
+  two versions independently.
+source: https://github.com/anveshmuppeda/kubernetes/tree/main/examples/priority_classes
+tags: [scheduling, priorityclass, preemption, nginx, deployment, ingress, working]
+objectives:
+  - Create cluster-scoped PriorityClass objects (high and low)
+  - Assign deployments to different priorityClassName values
+  - Expose each deployment via HTTPS Ingress paths (/high and /low)
+observations:
+  - PriorityClass resources are visible cluster-wide (kubectl get priorityclass)
+  - Deployments roll out and serve distinct pages
+  - In resource pressure scenarios, high-priority pods are favored over low

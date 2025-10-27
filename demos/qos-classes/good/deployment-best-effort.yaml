@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qos-best-effort
+  labels:
+    app: qos-best-effort
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qos-best-effort
+  template:
+    metadata:
+      labels:
+        app: qos-best-effort
+    spec:
+      volumes:
+        - name: web
+          emptyDir: {}
+      initContainers:
+        - name: init-web
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              cat >/work/index.html <<'EOF'
+              <!doctype html>
+              <html><head><meta charset="utf-8" /><title>QoS: BestEffort</title>
+              <style>body{font-family:system-ui,sans-serif;padding:20px}</style></head>
+              <body>
+                <h1>QoS Class: BestEffort</h1>
+                <p>No requests or limits are set for this Pod. Kubernetes will classify it as BestEffort.</p>
+                <p>Pod: ${POD_NAME}</p>
+                <p>Node: ${NODE_NAME}</p>
+              </body></html>
+              EOF
+          volumeMounts:
+            - name: web
+              mountPath: /work
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web
+              mountPath: /usr/share/nginx/html
+          # No resources specified => BestEffort

@@ -3,3 +3,10 @@
 
 # TLS certificates
 certs/*.pem
+
+# LLM tools
+.kilocode/
+.kiro/
+
+# temporary files
+.url_path

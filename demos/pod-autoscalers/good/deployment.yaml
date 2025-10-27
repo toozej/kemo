@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-autoscalers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-autoscalers
+  template:
+    metadata:
+      labels:
+        app: pod-autoscalers
+    spec:
+      containers:
+        - name: app
+          image: mendhak/http-https-echo:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "128Mi"

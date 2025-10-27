@@ -1,0 +1,9 @@
+---
+resources:
+  - deployment-best-effort.yaml
+  - service-best-effort.yaml
+  - deployment-burstable.yaml
+  - service-burstable.yaml
+  - deployment-guaranteed.yaml
+  - service-guaranteed.yaml
+  - ingress.yaml

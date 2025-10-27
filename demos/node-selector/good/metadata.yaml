@@ -1,0 +1,13 @@
+---
+name: Node Selector - Working
+description: |
+  Demonstrates scheduling a Deployment using nodeSelector. Targets nodes labeled kubernetes.io/os=linux and serves a page showing pod/node identity.
+source: https://github.com/anveshmuppeda/kubernetes/tree/main/examples/node_selectors
+tags: [node-selector, scheduling, placement, nginx, networking, good]
+objectives:
+  - Confirm pods schedule only onto nodes matching kubernetes.io/os=linux
+  - Access via HTTPS at node-selector-good.k8s.orb.local or node-selector-good.k8s.mk.local
+  - Observe pod and node identity on the served page
+observations:
+  - Pods remain Pending if no nodes match the selector
+  - Removing/changing the selector alters scheduling eligibility

@@ -1,0 +1,12 @@
+---
+name: Volumes (ConfigMap + emptyDir) - Working
+description: Demonstrates mounting a ConfigMap as static web content and an emptyDir shared between containers. NGINX serves index.html from the ConfigMap and a sidecar writes a heartbeat file into the emptyDir, visible at /runtime/heartbeat.txt.
+source: https://medium.com/@muppedaanvesh/a-hand-on-guide-to-kubernetes-volumes-%EF%B8%8F-b59d4d4e347f
+tags: [volumes, configmap, emptyDir, sidecar, nginx, networking, good]
+objectives:
+  - Serve index.html from a ConfigMap volume via NGINX
+  - Observe heartbeat updates written by a sidecar into an emptyDir volume
+  - Access the app via HTTPS at volumes-good.k8s.orb.local or volumes-good.k8s.mk.local
+observations:
+  - Updating the ConfigMap would require a pod restart to change index.html
+  - The heartbeat file updates live without restart because emptyDir is shared

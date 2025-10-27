@@ -1,0 +1,57 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-routing-app2
+  labels:
+    app: ingress-routing-app2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingress-routing-app2
+  template:
+    metadata:
+      labels:
+        app: ingress-routing-app2
+    spec:
+      volumes:
+        - name: web-root
+          emptyDir: {}
+      initContainers:
+        - name: init-web
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat <<'HTML' > /usr/share/nginx/html/index.html
+              <!doctype html>
+              <html>
+              <head><title>app2</title></head>
+              <body>
+                <h1>app2</h1>
+                <p>POD_NAME: ${POD_NAME}</p>
+                <p>HOSTNAME: ${HOSTNAME}</p>
+              </body>
+              </html>
+              HTML
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: web-root
+              mountPath: /usr/share/nginx/html
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web-root
+              mountPath: /usr/share/nginx/html

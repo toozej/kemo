@@ -1,3 +1,4 @@
+---
 name: Canary Testing Demo
 description: |
   A demo for canary deployment in Kubernetes, showcasing a stable and canary version of an NGINX deployment but missing weight annotations.

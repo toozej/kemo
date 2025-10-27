@@ -1,0 +1,7 @@
+---
+resources:
+  - resourcequota.yaml
+  - limitrange.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml

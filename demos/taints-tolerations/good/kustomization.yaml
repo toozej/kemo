@@ -1,0 +1,5 @@
+---
+resources:
+  - deployment-with-tolerations.yaml
+  - service.yaml
+  - ingress.yaml

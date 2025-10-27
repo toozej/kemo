@@ -1,0 +1,16 @@
+---
+name: Endpoints - Selectorless Service with Manual Endpoints
+description: |
+  Demonstrates a selectorless Service with manually managed Endpoints pointing to
+  in-cluster backends (two NGINX Deployments). Endpoints are generated dynamically
+  at runtime by querying Pod IPs and applied after backends are ready. Traffic is
+  exposed via HTTPS Ingress.
+source: https://medium.com/@muppedaanvesh/a-hands-on-guide-to-kubernetes-endpoints-endpointslices-%EF%B8%8F-1375dfc9075c
+tags: [service, endpoints, endpointslices, networking, nginx, working]
+objectives:
+  - Deploy two backend pods (A and B) without coupling them to the Service via selectors
+  - Create an Endpoints resource manually that lists backend Pod IPs on port 80
+  - Access the service through HTTPS Ingress and observe routing to A/B backends
+observations:
+  - Service has no selector; Endpoints object determines traffic targets
+  - Updating Endpoints immediately updates routing without redeploying backends

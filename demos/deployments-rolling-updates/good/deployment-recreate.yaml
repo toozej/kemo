@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployments-rolling-updates-recreate
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: deployments-rolling-updates-recreate
+  template:
+    metadata:
+      labels:
+        app: deployments-rolling-updates-recreate
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+  strategy:
+    type: Recreate

@@ -1,0 +1,13 @@
+---
+name: Labels & Selectors - Working
+description: |
+  Demonstrates Kubernetes labels on Pods and Service selectors (equality-based) by routing to two Deployments (v1 and v2) labeled differently. Ingress path routes (/v1, /v2) target matching Services.
+source: https://github.com/anveshmuppeda/kubernetes/tree/main/examples/labels_selectors
+tags: [labels, selectors, services, routing, nginx, networking, good]
+objectives:
+  - Access https://labels-selectors-good.k8s.orb.local or labels-selectors-good.k8s.mk.local/v1 and /v2 to see different backends
+  - Inspect Services’ selectors and Deployments’ labels to understand routing
+  - Confirm Deployments/Services/Ingress are healthy and paths resolve
+observations:
+  - Service labels determine which Pods receive traffic
+  - Changing pod labels or service selectors reconfigures routing dynamically

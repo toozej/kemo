@@ -1,3 +1,4 @@
+---
 name: NGINX Service - Working
 description: |
   A working NGINX deployment with service exposing port 80.
@@ -9,4 +10,3 @@ objectives:
 observations:
   - NGINX pod starts
   - Service routes traffic correctly
-

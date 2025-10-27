@@ -1,0 +1,14 @@
+---
+name: Pod Disruption Budget (PDB) - Working
+description: |
+  Demonstrates a Deployment with 3 replicas protected by a PDB (minAvailable: 2).
+  Shows how voluntary disruptions are limited to maintain availability.
+source: https://github.com/anveshmuppeda/kubernetes/tree/main/examples/pdb
+tags: [pdb, availability, disruptions, maintenance, nginx, networking, good]
+objectives:
+  - Observe a PDB requiring at least 2 pods available during voluntary disruptions
+  - Confirm Service routes to Deployment replicas and Ingress exposes HTTPS endpoint
+  - Inspect PDB status and allowed disruptions via kubectl describe
+observations:
+  - With replicas=3 and minAvailable=2, at most one pod can be voluntarily disrupted at a time
+  - Rolling updates proceed while honoring PDB constraints

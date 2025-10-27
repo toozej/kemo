@@ -1,0 +1,10 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pod-disruption-budget
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: pod-disruption-budget

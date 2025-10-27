@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blue-green
+      color: green
+  template:
+    metadata:
+      labels:
+        app: blue-green
+        color: green
+    spec:
+      volumes:
+        - name: html
+          emptyDir: {}
+      initContainers:
+        - name: init-index
+          image: busybox:1.36
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /workdir/index.html << 'EOF'
+              <!doctype html>
+              <html>
+              <head>
+                <meta charset="utf-8"/>
+                <title>Green</title>
+                <style>
+                  :root { color-scheme: light dark; }
+                  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#1b5e20; color:#fff; display:flex; align-items:center; justify-content:center; height:100vh; }
+                  .card { text-align:center; line-height:1.4; }
+                  .pill { display:inline-block; padding:6px 12px; background:#2e7d32; border-radius:999px; font-weight:700; letter-spacing:0.02em; }
+                </style>
+              </head>
+              <body>
+                <div class="card">
+                  <h1>Green Deployment</h1>
+                  <div class="pill">GREEN</div>
+                  <p>Pod: ${POD_NAME}</p>
+                </div>
+              </body>
+              </html>
+              EOF
+          volumeMounts:
+            - name: html
+              mountPath: /workdir
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+              readOnly: true

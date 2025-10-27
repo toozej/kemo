@@ -1,0 +1,20 @@
+---
+name: QoS Classes - Working
+description: Demonstrates Kubernetes QoS classes (BestEffort, Burstable, Guaranteed) using three nginx Deployments with different resource configurations, exposed via path-based ingress.
+source: https://medium.com/@muppedaanvesh/a-hands-on-guide-to-kubernetes-qos-classes-%EF%B8%8F-571b5f8f7e58
+tags:
+  - qos
+  - qos-classes
+  - resources
+  - scheduling
+  - nginx
+  - networking
+  - good
+objectives:
+  - Access https://qos-classes-good.k8s.orb.local or qos-classes-good.k8s.mk.local/best-effort, /burstable, and /guaranteed to observe differences
+  - Inspect requests and limits to understand how Kubernetes derives QoS class
+  - Confirm Deployments/Services/Ingress are healthy and routes function
+observations:
+  - BestEffort: no requests/limits; lowest priority under pressure
+  - Burstable: requests lower than limits; can burst above requested baseline
+  - Guaranteed: requests equal limits for CPU and memory; highest eviction priority

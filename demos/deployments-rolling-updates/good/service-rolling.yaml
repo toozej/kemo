@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deployments-rolling-updates-rolling
+spec:
+  selector:
+    app: deployments-rolling-updates-rolling
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

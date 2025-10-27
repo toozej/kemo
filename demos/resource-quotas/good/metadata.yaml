@@ -1,0 +1,12 @@
+---
+name: ResourceQuota + LimitRange - Working
+description: Demonstrates namespace-scoped ResourceQuota and LimitRange enforcing compute caps and default requests/limits, with a simple nginx app exposed via Ingress.
+source: https://medium.com/@muppedaanvesh/a-hand-on-guide-to-kubernetes-resource-quotas-limit-ranges-%EF%B8%8F-8b9f8cc770c5
+tags: [resourcequota, limitrange, resources, qos, nginx, networking, good]
+objectives:
+  - Inspect ResourceQuota usage and hard limits in the namespace
+  - Observe LimitRange default requests/limits applied to containers without explicit resources
+  - Access HTTPS endpoint at resource-quotas-good.k8s.orb.local or resource-quotas-good.k8s.mk.local
+observations:
+  - kubectl describe resourcequota/limitrange reflects configured constraints
+  - The Deployment succeeds within quota using LimitRange defaults

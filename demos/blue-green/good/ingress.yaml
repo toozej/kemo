@@ -1,0 +1,33 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blue-green
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - blue-green-good.k8s.orb.local
+      secretName: demo-tls
+  rules:
+    - host: blue-green-good.k8s.orb.local
+      http:
+        paths:
+          - path: /blue
+            pathType: Prefix
+            backend:
+              service:
+                name: blue
+                port:
+                  number: 80
+          - path: /green
+            pathType: Prefix
+            backend:
+              service:
+                name: green
+                port:
+                  number: 80

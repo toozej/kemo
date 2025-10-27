@@ -1,0 +1,12 @@
+---
+name: CronJobs - Working
+description: Demonstrates a Kubernetes CronJob scheduled to run every minute with concurrencyPolicy Forbid. Each run prints pod/node identity and a timestamp, then exits successfully.
+source: https://medium.com/@muppedaanvesh/a-hands-on-guide-to-kubernetes-cronjobs-%EF%B8%8F-47393a98716d
+tags: [cronjobs, batch, schedule, good]
+objectives:
+  - Observe the CronJob creating Jobs on its schedule
+  - Inspect Jobs and Pods and view logs for recent runs
+  - Understand concurrencyPolicy and job history limits
+observations:
+  - A new Job appears roughly each minute
+  - Logs show UTC timestamps and pod/node identity

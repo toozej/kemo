@@ -1,6 +1,6 @@
 set shell := ["bash", "-cu"]
 
-k8s-provider := `if command -v orb &>/dev/null; then echo orbstack; else echo minikube; fi`
+k8s-provider := `if kubectl config current-context 2>/dev/null | grep -q "^orbstack$"; then echo orbstack; elif command -v orb &>/dev/null; then echo orbstack; else echo minikube; fi`
 
 default:
     @just --choose
@@ -15,7 +15,7 @@ kubernetes-setup:
         just install-ingress-nginx-https; \
         just setup-https; \
         just install-kubernetes-dashboard; \
-        just configure-hosts dashboard; \
+        KEMO_PROVIDER="{{k8s-provider}}" just configure-hosts dashboard; \
     else \
         gum style --foreground blue '🔵 OrbStack not found, falling back to Minikube'; \
         just start-minikube; \
@@ -23,7 +23,7 @@ kubernetes-setup:
         just install-ingress-nginx-https; \
         just setup-https; \
         just install-kubernetes-dashboard; \
-        just configure-hosts dashboard; \
+        KEMO_PROVIDER="{{k8s-provider}}" just configure-hosts dashboard; \
     fi
 
 kubernetes-cleanup:
@@ -150,22 +150,49 @@ create-namespace demo variant k8s-provider:
     kubectl config use-context "$ns"
     gum style --foreground green "✅ Namespace '$ns' ready"
 
-apply-manifests demo variant:
+apply-manifests demo variant debug="false":
     #!/usr/bin/env bash
     set -euo pipefail
+
     ns="${KEMO_NAMESPACE:-{{demo}}-{{variant}}}"
+    ORB_HOST="{{demo}}-{{variant}}.k8s.orb.local"
+    MK_HOST="{{demo}}-{{variant}}.k8s.mk.local"
+
+    if [[ "{{debug}}" == "true" ]]; then
+        gum style --foreground yellow --bold "🐛 DEBUG MODE ENABLED"
+        echo "Variables:"
+        echo "  demo: {{demo}}"
+        echo "  variant: {{variant}}"
+        echo "  ns: $ns"
+        echo "  ORB_HOST: $ORB_HOST"
+        echo "  MK_HOST: $MK_HOST"
+        gum style --foreground yellow "END OF DEBUG OUTPUT"
+    fi
+
     gum style --foreground cyan "📂 Applying manifests for '{{demo}}/{{variant}}'..."
     if [[ "${KEMO_DRY_RUN:-false}" == "true" ]]; then
         gum style --foreground blue "🔍 DRY RUN: Would execute:"
-        gum style --foreground white "kubectl apply -n $ns -k demos/{{demo}}/{{variant}}"
+        gum style --foreground white "kubectl kustomize demos/{{demo}}/{{variant}} | yq --from-file scripts/yq-transform.yq | kubectl apply -n $ns -f -"
     else
-        gum spin --spinner dot --title "Applying manifests..." -- \
-        kubectl apply -n "$ns" -k demos/{{demo}}/{{variant}}
+        CMD="kubectl kustomize demos/{{demo}}/{{variant}} | yq --from-file scripts/yq-transform.yq | kubectl apply -n \"$ns\" -f -"
+        if [[ "{{debug}}" == "true" ]]; then
+            gum style --foreground magenta "Executing command:"
+            echo "$CMD"
+            export ORB_HOST="$ORB_HOST" MK_HOST="$MK_HOST"
+            set -x
+            kubectl kustomize demos/{{demo}}/{{variant}} | yq --from-file scripts/yq-transform.yq | kubectl apply -n "$ns" -f -
+            set +x
+        else
+            gum spin --spinner dot --title "Applying manifests..." -- \
+            bash -lc "export ORB_HOST=\"$ORB_HOST\" MK_HOST=\"$MK_HOST\"; $CMD"
+        fi
         gum style --foreground green "✅ Manifests applied successfully"
     fi
 
+# Interactive demo browser with metadata preview
 select-demo:
     @scripts/select-demo.sh
+alias browse-demos := select-demo
 
 run-demo demo variant full_setup="true":
     @gum style --foreground green --bold "🎬 Starting demo: {{demo}}/{{variant}}"
@@ -173,9 +200,9 @@ run-demo demo variant full_setup="true":
     @if [[ "{{full_setup}}" == "true" ]]; then \
         just kubernetes-setup; \
     fi
-    @just create-namespace {{demo}} {{variant}} {{k8s-provider}}
-    @just configure-https "" {{demo}} {{variant}}
-    @scripts/run-demo.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
+    @KEMO_PROVIDER="{{k8s-provider}}" just create-namespace {{demo}} {{variant}} {{k8s-provider}}
+    @KEMO_PROVIDER="{{k8s-provider}}" just configure-https "" {{demo}} {{variant}}
+    @KEMO_PROVIDER="{{k8s-provider}}" scripts/run-demo.sh {{demo}} {{variant}} run bash demos/{{demo}}/{{variant}}/run.sh
     @if [[ "${KEMO_SKIP_CLEANUP:-false}" != "true" ]]; then \
         echo; \
         if gum confirm "🧹 Clean up resources?"; then \
@@ -191,11 +218,11 @@ install-deps:
     @echo "🔧 Installing prerequisites for Kemo..."
     @if [ "$(uname)" = "Darwin" ]; then \
         echo "🍎 Detected macOS. Installing with brew..."; \
-        brew install minikube kubectl gum yq tmux helm nss mkcert; \
+        brew install minikube kubectl gum yq tmux helm nss mkcert kubeconform yamllint; \
         mkcert -install; \
     elif [ -f /etc/debian_version ]; then \
         echo "🐧 Detected Debian-based Linux. Installing with apt..."; \
-        sudo apt update && sudo apt install -y jq yq tmux curl gnupg lsb-release software-properties-common libnss3-tools mkcert; \
+        sudo apt update && sudo apt install -y jq yq tmux curl gnupg lsb-release software-properties-common libnss3-tools mkcert yamllint; \
         curl -s -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb && \
         sudo dpkg -i minikube_latest_amd64.deb && \
         rm minikube_latest_amd64.deb; \
@@ -203,56 +230,26 @@ install-deps:
           | jq -r ".assets[] | select(.name | test(\"gum_.*_Linux_x86_64.tar.gz\")) | .browser_download_url" \
           | xargs curl -L | tar xz && sudo mv gum /usr/local/bin/; \
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; \
+        echo "    - Installing kubeconform..."; \
+        curl -s -L "https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz" | tar xz && sudo mv kubeconform /usr/local/bin/; \
         mkcert -install; \
     elif [ -f /etc/redhat-release ]; then \
         echo "🐧 Detected RHEL-based Linux. Installing with dnf..."; \
-        sudo dnf install -y jq yq tmux helm nss-tools mkcert; \
+        sudo dnf install -y jq yq tmux helm nss-tools mkcert yamllint; \
         curl -s -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm && \
         sudo rpm -Uvh minikube-latest.x86_64.rpm && \
         rm minikube-latest.x86_64.rpm; \
         curl -s https://api.github.com/repos/charmbracelet/gum/releases/latest \
           | jq -r ".assets[] | select(.name | test(\"gum_.*_Linux_x86_64.tar.gz\")) | .browser_download_url" \
           | xargs curl -L | tar xz && sudo mv gum /usr/local/bin/; \
+        echo "    - Installing kubeconform..."; \
+        curl -s -L "https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz" | tar xz && sudo mv kubeconform /usr/local/bin/; \
         mkcert -install; \
     else \
-        echo "❌ Unsupported system. Please install minikube, kubectl, gum, yq, helm, tmux, and mkcert manually."; \
+        echo "❌ Unsupported system. Please install minikube, kubectl, gum, yq, helm, tmux, mkcert, kubeconform, and yamllint manually."; \
         exit 1; \
     fi
     @gum style --foreground green "✅ All dependencies installed successfully!"
-
-# Interactive demo browser with metadata preview
-browse-demos:
-    @gum style --foreground cyan --bold "🧪 Kemo Demo Browser"
-    @echo
-    @demos_json="/tmp/kemo-demos.json"
-    @find demos -name metadata.yaml | while read metadata; do \
-        dir=$(dirname "$metadata"); \
-        relpath="${dir#demos/}"; \
-        demo="${relpath%/*}"; \
-        variant="${relpath##*/}"; \
-        name=$(yq e '.name' "$metadata"); \
-        desc=$(yq e '.description' "$metadata" | head -n 1); \
-        tags=$(yq e '.tags // [] | join(", ")' "$metadata"); \
-        echo "{\"demo\":\"$demo\",\"variant\":\"$variant\",\"name\":\"$name\",\"desc\":\"$desc\",\"tags\":\"$tags\",\"path\":\"$metadata\"}"; \
-    done | jq -s '.' > "$demos_json"
-    @cat "$demos_json" | jq -r '.[] | "\(.demo)/\(.variant) - \(.name)"' | \
-    gum filter --placeholder "Search demos..." | \
-    head -n 1 | \
-    while read selection; do \
-        if [[ -n "$selection" ]]; then \
-            demo_variant=$(echo "$selection" | cut -d' ' -f1); \
-            demo=${demo_variant%/*}; \
-            variant=${demo_variant#*/}; \
-            metadata_path=$(cat "$demos_json" | jq -r ".[] | select(.demo == \"$demo\" and .variant == \"$variant\") | .path"); \
-            gum style --foreground green "Selected: $demo/$variant"; \
-            echo; \
-            yq e '.' "$metadata_path" | gum pager; \
-            if gum confirm "Run this demo?"; then \
-                just run-demo "$demo" "$variant"; \
-            fi; \
-        fi; \
-    done
-    @rm -f "$demos_json"
 
 # Health check for the Kemo environment
 health-check:
@@ -279,7 +276,26 @@ health-check:
 
 # Alias for run-demo with full_setup=false
 rapid-demo demo variant:
-    @just run-demo {{demo}} {{variant}} false
+	@just run-demo {{demo}} {{variant}} false
+
+# Cycle through all available good demos one-by-one for validation
+cycle:
+	@just kubernetes-setup
+	@for demo in $(find demos -name metadata.yaml -path "*/good/*" | sed 's|demos/\([^/]*\)/good/metadata.yaml|\1|' | sort); do \
+		gum style --foreground cyan "🎬 Running demo: $demo/good"; \
+		KEMO_PROVIDER="{{k8s-provider}}" just create-namespace "$demo" good "{{k8s-provider}}"; \
+		KEMO_PROVIDER="{{k8s-provider}}" just configure-https "" "$demo" good; \
+		KEMO_PROVIDER="{{k8s-provider}}" just apply-manifests "$demo" good; \
+		(cd "demos/$demo/good" && KEMO_NS="$demo-good" KEMO_DEMO="$demo" KEMO_VARIANT="good" KEMO_PROVIDER="{{k8s-provider}}" bash run.sh); \
+		gum style --foreground green "✅ Demo $demo/good completed"; \
+		just clean-demo-namespace "$demo" good; \
+		echo; \
+	done
+	gum style --foreground green "🎉 All demos cycled successfully!"
+
+# Validate all demo configurations
+validate-demos:
+	@scripts/validate-demos.sh
 
 clean-demo-namespace demo variant:
     #!/usr/bin/env bash
@@ -301,12 +317,27 @@ configure-https namespace="demo" demo="" variant="":
     if [[ -n "{{variant}}" && -n "{{demo}}" ]]; then
         # Variant format
         ACTUAL_NAMESPACE="{{demo}}-{{variant}}"
-        DISPLAY_NAME="{{variant}}.{{demo}}.demo.local"
+        ORB_HOST="{{demo}}-{{variant}}.k8s.orb.local"
+        MK_HOST="{{demo}}-{{variant}}.k8s.mk.local"
+        # Determine provider from a single source of truth
+        PROVIDER="${KEMO_PROVIDER:-{{k8s-provider}}}"
+        if [[ "$PROVIDER" == "orbstack" ]]; then
+            DISPLAY_NAME="$ORB_HOST"
+        else
+            DISPLAY_NAME="$MK_HOST"
+        fi
         gum style --foreground cyan "🔒 Configuring HTTPS for '{{demo}}/{{variant}}'..."
     else
         # Simple format
         ACTUAL_NAMESPACE="{{namespace}}"
-        DISPLAY_NAME="{{namespace}}.demo.local"
+        ORB_HOST="{{namespace}}.k8s.orb.local"
+        MK_HOST="{{namespace}}.k8s.mk.local"
+        PROVIDER="${KEMO_PROVIDER:-{{k8s-provider}}}"
+        if [[ "$PROVIDER" == "orbstack" ]]; then
+            DISPLAY_NAME="$ORB_HOST"
+        else
+            DISPLAY_NAME="$MK_HOST"
+        fi
         gum style --foreground cyan "🔒 Configuring HTTPS for namespace '{{namespace}}'..."
     fi
     # Create TLS secret
@@ -333,22 +364,27 @@ setup-https:
         gum style --foreground red "❌ mkcert not found. Run 'just install-deps' first."
         exit 1
     fi
-    # Generate certificates for demo domains
-    gum style --foreground cyan "📜 Generating certificates for *.demo.local..."
-    mkcert -cert-file certs/demo.local.pem -key-file certs/demo.local-key.pem "*.demo.local" demo.local localhost 127.0.0.1
+    # Generate certificates for provider domains
+    gum style --foreground cyan "🔐 Ensuring mkcert root CA is trusted..."
+    mkcert -install 2>/dev/null || gum style --foreground yellow "⚠️ mkcert trust may require manual action (ensure Firefox trusts OS certs)"
+    gum style --foreground cyan "📜 Generating certificates for *.k8s.orb.local and *.k8s.mk.local..."
+    mkcert -cert-file certs/kemo.pem -key-file certs/kemo-key.pem \
+        "*.k8s.orb.local" "k8s.orb.local" \
+        "*.k8s.mk.local" "k8s.mk.local" \
+        localhost 127.0.0.1
     gum style --foreground green "✅ HTTPS certificates generated"
 
 create-tls-secret namespace="demo":
     #!/usr/bin/env bash
     set -euo pipefail
     gum style --foreground cyan "🔐 Creating TLS secret for namespace '{{namespace}}'..."
-    if [[ ! -f certs/demo.local.pem || ! -f certs/demo.local-key.pem ]]; then
+    if [[ ! -f certs/kemo.pem || ! -f certs/kemo-key.pem ]]; then
         gum style --foreground red "❌ Certificate files not found. Run 'just setup-https' first."
         exit 1
     fi
     kubectl create secret tls demo-tls \
-        --cert=certs/demo.local.pem \
-        --key=certs/demo.local-key.pem \
+        --cert=certs/kemo.pem \
+        --key=certs/kemo-key.pem \
         --namespace="{{namespace}}" \
         --dry-run=client -o yaml | kubectl apply -f -
     gum style --foreground green "✅ TLS secret created in namespace '{{namespace}}'"
@@ -358,9 +394,17 @@ configure-hosts namespace="demo" demo="" variant="":
     set -euo pipefail
     # Determine hostname format for display
     if [[ -n "{{variant}}" && -n "{{demo}}" ]]; then
-        DISPLAY_NAME="{{variant}}.{{demo}}.demo.local"
+        ORB_HOST="{{demo}}-{{variant}}.k8s.orb.local"
+        MK_HOST="{{demo}}-{{variant}}.k8s.mk.local"
     else
-        DISPLAY_NAME="{{namespace}}.demo.local"
+        ORB_HOST="{{namespace}}.k8s.orb.local"
+        MK_HOST="{{namespace}}.k8s.mk.local"
+    fi
+    PROVIDER="${KEMO_PROVIDER:-{{k8s-provider}}}"
+    if [[ "$PROVIDER" == "orbstack" ]]; then
+        DISPLAY_NAME="$ORB_HOST"
+    else
+        DISPLAY_NAME="$MK_HOST"
     fi
     gum style --foreground cyan "🔧 Configuring DNS for '$DISPLAY_NAME'..."
     # Get ingress controller external IP
@@ -371,22 +415,25 @@ configure-hosts namespace="demo" demo="" variant="":
     fi
     gum style --foreground blue "📋 Ingress IP: $INGRESS_IP"
     if [[ "$(uname)" == "Darwin" ]]; then
-        # macOS: Use /etc/resolver for wildcard DNS (no /etc/hosts editing!)
-        gum style --foreground cyan "🍎 Configuring macOS resolver for *.demo.local..."
-        
-        # Check if resolver is already configured with correct IP
-        if [[ -f /etc/resolver/demo.local ]] && grep -q "nameserver $INGRESS_IP" /etc/resolver/demo.local; then
-            gum style --foreground green "✅ DNS resolver already configured for *.demo.local"
+        if [[ "$PROVIDER" == "orbstack" ]]; then
+            gum style --foreground cyan "🍎 OrbStack detected - host DNS for *.k8s.orb.local is handled by OrbStack"
+            gum style --foreground green "✅ No resolver changes required"
         else
-            # Create or update resolver configuration
+            gum style --foreground cyan "🍎 Configuring macOS resolver for k8s.mk.local via Minikube..."
+            MINIKUBE_IP="$(minikube ip 2>/dev/null || true)"
+            if [[ -z "$MINIKUBE_IP" || ! "$MINIKUBE_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                gum style --foreground red "❌ Could not determine Minikube IP. Start Minikube first: 'minikube start'"
+                exit 1
+            fi
             sudo mkdir -p /etc/resolver
-            echo "nameserver $INGRESS_IP" | sudo tee /etc/resolver/demo.local > /dev/null
-            gum style --foreground green "✅ DNS resolver configured for all *.demo.local domains"
-            gum style --foreground cyan "🔐 Ensuring mkcert CA is trusted..."
-            mkcert -install 2>/dev/null || gum style --foreground yellow "⚠️  mkcert CA trust may need manual setup"
+            echo "nameserver $MINIKUBE_IP" | sudo tee /etc/resolver/k8s.mk.local > /dev/null
+            gum style --foreground green "✅ DNS resolver configured for *.k8s.mk.local via $MINIKUBE_IP"
+            gum style --foreground cyan "🧩 Ensuring Minikube addons 'ingress' and 'ingress-dns' are enabled..."
+            minikube addons enable ingress >/dev/null 2>&1 || true
+            minikube addons enable ingress-dns >/dev/null 2>&1 || true
+            gum style --foreground green "✅ Minikube DNS addons ensured"
         fi
-        gum style --foreground green "✅ Certificate trust configured"
-        gum style --foreground cyan "🌐 All services accessible at: https://*.demo.local"
+        gum style --foreground cyan "🌐 Service accessible at: https://$DISPLAY_NAME"
     else
         # Linux: Use /etc/hosts as fallback
         gum style --foreground yellow "🐧 Linux detected - using /etc/hosts (manual management required)"

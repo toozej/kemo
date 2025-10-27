@@ -1,0 +1,7 @@
+---
+resources:
+  - deployment-rolling.yaml
+  - service-rolling.yaml
+  - deployment-recreate.yaml
+  - service-recreate.yaml
+  - ingress.yaml

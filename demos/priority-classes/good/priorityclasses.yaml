@@ -1,0 +1,17 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 100000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "High priority for critical workloads in the demo."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: low-priority
+value: 1000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "Low priority for non-critical workloads in the demo."

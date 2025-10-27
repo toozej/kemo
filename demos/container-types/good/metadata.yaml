@@ -1,0 +1,14 @@
+---
+name: Container Types (Init + Sidecar) - Working
+description: Demonstrates a Deployment using an initContainer to bootstrap web content and a sidecar container to continually update a shared volume, served by nginx.
+source:
+  - https://github.com/anveshmuppeda/kubernetes/tree/main/hands-on-tasks/deployment-with-init-and-sidecar-container
+  - https://medium.com/@muppedaanvesh/exploring-container-types-in-kubernetes-beyond-init-and-sidecar-containers-3c1001bb7a85
+tags: [containers, init, sidecar, deployment, nginx, networking, good]
+objectives:
+  - Observe initContainer creating initial index.html with pod/node identity
+  - Verify sidecar updates heartbeat.txt and page reflects it
+  - Access via HTTPS at container-types-good.k8s.orb.local or container-types-good.k8s.mk.local
+observations:
+  - Deployment becomes Ready after init completes
+  - Heartbeat value changes over time, showing sidecar activity

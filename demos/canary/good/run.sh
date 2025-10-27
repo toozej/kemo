@@ -29,6 +29,5 @@ done
 echo "Stable NGINX version ($stable_version) responses: $stable_count"
 echo "Canary NGINX version ($canary_version) responses: $canary_count"
 
-# TODO figure out why KEMO_URL_PATH isn't getting passed into kemo-hotkeys.sh
-export KEMO_URL_PATH="nginx-version"
+echo "nginx-version" > ".url_path"
 echo "🎉 Your \"good\" canary app is now live. Press ctrl-k u to open the ${KEMO_DEMO} websites."

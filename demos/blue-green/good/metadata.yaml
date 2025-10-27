@@ -1,0 +1,15 @@
+---
+name: Blue-Green NGINX - Working
+description: |
+  Demonstrates Blue/Green (A/B) deployments using two NGINX deployments serving colored pages
+  with pod hostname via initContainer. Exposes both versions through a single HTTPS ingress
+  with path-based routing (/blue and /green).
+source: https://medium.com/@muppedaanvesh/blue-green-deployment-in-kubernetes-76f9153e0805
+tags: [blue-green, ab-testing, nginx, deployment, ingress, working]
+objectives:
+  - Deploy two versions (blue and green) of the same app
+  - Route traffic to each via HTTPS Ingress paths
+  - Observe pod identity (hostname) on served pages
+observations:
+  - Both deployments roll out successfully
+  - Ingress routes /blue to blue service and /green to green service over HTTPS

@@ -1,0 +1,33 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deployments-rolling-updates
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - deployments-rolling-updates-good.k8s.orb.local
+      secretName: demo-tls
+  rules:
+    - host: deployments-rolling-updates-good.k8s.orb.local
+      http:
+        paths:
+          - path: /rolling
+            pathType: Prefix
+            backend:
+              service:
+                name: deployments-rolling-updates-rolling
+                port:
+                  number: 80
+          - path: /recreate
+            pathType: Prefix
+            backend:
+              service:
+                name: deployments-rolling-updates-recreate
+                port:
+                  number: 80

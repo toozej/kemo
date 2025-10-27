@@ -1,0 +1,10 @@
+(
+  select(.kind == "Ingress") |
+  .spec.tls = [{"hosts":[env(ORB_HOST), env(MK_HOST)], "secretName": (.spec.tls[0].secretName // "demo-tls")}] |
+  .spec.rules = [
+    (.spec.rules[0] | .host = env(ORB_HOST)),
+    (.spec.rules[0] | .host = env(MK_HOST))
+  ]
+)
+,
+(select(.kind != "Ingress"))

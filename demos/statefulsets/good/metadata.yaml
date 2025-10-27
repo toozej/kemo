@@ -1,0 +1,19 @@
+---
+name: StatefulSet - Working
+description: |
+  Concise overview of a Kubernetes StatefulSet with persistent storage and stable pod identities.
+  This demo adapts an upstream StatefulSet to serve HTTP using nginx. An initContainer writes an
+  index.html that includes the pod's hostname to demonstrate stable identity and PVC-backed persistence.
+source: https://github.com/anveshmuppeda/kubernetes/blob/main/examples/statefulset/mysql-sts.yaml
+tags: [statefulset, storage, persistence, nginx, networking, good]
+objectives:
+  - Apply the kustomization and observe ordered pod startup (statefulsets-0, then statefulsets-1).
+  - Inspect stable network IDs via the governing headless Service (DNS entries for each ordinal).
+  - Verify a per-pod PersistentVolumeClaim from volumeClaimTemplates.
+  - Access via Ingress at statefulsets-good.k8s.orb.local or statefulsets-good.k8s.mk.local and observe per-pod content served by nginx.
+  - Delete a pod and confirm it retains its ordinal identity and reuses the same PVC after restart.
+observations:
+  - kubectl rollout status shows StatefulSet progressing in ordinal order.
+  - Pods keep stable hostnames and DNS A records (statefulsets-N).
+  - PVCs are created one-per-pod and remain after pod restarts.
+  - Ingress with TLS (demo-tls) routes HTTPS traffic to the ClusterIP Service on port 80.

@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,8 +14,7 @@ spec:
         app: hello
     spec:
       containers:
-      - name: hello
-        image: nginx:nonexistenttag
-        ports:
-        - containerPort: 80
-
+        - name: hello
+          image: nginx:nonexistenttag
+          ports:
+            - containerPort: 80

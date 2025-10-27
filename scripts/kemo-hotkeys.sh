@@ -27,7 +27,21 @@ case "$1" in
     ;;
   k8s-dashboard)
     gum style --foreground blue '🌐 Opening Kubernetes Dashboard via HTTPS ingress...'
-    dashboard_url='https://dashboard.demo.local/'
+    # Determine provider
+    provider="${KEMO_PROVIDER:-}"
+    if [[ -z "$provider" ]]; then
+      current_context="$(kubectl config current-context 2>/dev/null || echo "")"
+      if [[ "$current_context" == "orbstack" ]]; then
+        provider="orbstack"
+      else
+        provider="minikube"
+      fi
+    fi
+    if [[ "$provider" == "orbstack" ]]; then
+      dashboard_url='https://dashboard.k8s.orb.local/'
+    else
+      dashboard_url='https://dashboard.k8s.mk.local/'
+    fi
     token=$(kubectl -n kubernetes-dashboard create token dashboard-user 2>/dev/null)
     if [[ -n "$token" ]]; then
       if command -v pbcopy >/dev/null; then
@@ -57,8 +71,26 @@ case "$1" in
     ;;
   open-url)
     gum style --foreground blue '🌐 Opening demo URL ...'
-    # Use HTTPS ingress URL instead of cluster-local service
-    url="https://$KEMO_VARIANT.$KEMO_DEMO.demo.local/"
+    # Provider-specific HTTPS ingress URL
+    provider="${KEMO_PROVIDER:-}"
+    if [[ -z "$provider" ]]; then
+      current_context="$(kubectl config current-context 2>/dev/null || echo "")"
+      if [[ "$current_context" == "orbstack" ]]; then
+        provider="orbstack"
+      else
+        provider="minikube"
+      fi
+    fi
+    if [[ "$provider" == "orbstack" ]]; then
+      url="https://$KEMO_DEMO-$KEMO_VARIANT.k8s.orb.local/"
+    else
+      url="https://$KEMO_DEMO-$KEMO_VARIANT.k8s.mk.local/"
+    fi
+    # Read the URL path from the .url_path file if it exists
+    if [ -f "demos/$KEMO_DEMO/$KEMO_VARIANT/.url_path" ]; then
+        url_path=$(cat "demos/$KEMO_DEMO/$KEMO_VARIANT/.url_path")
+        url="$url$url_path"
+    fi
     if command -v open >/dev/null; then
       open "$url"
     elif command -v xdg-open >/dev/null; then

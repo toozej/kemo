@@ -1,0 +1,23 @@
+---
+name: Deployment Strategies RollingUpdate vs Recreate - Working
+description: |
+  Multi-service demo exposing two Deployments via path-based Ingress to illustrate rolling updates (maxSurge=1, maxUnavailable=0) versus recreate strategy, and scaling behavior.
+source:
+  - https://codefresh.io/learn/kubernetes-deployment/kubernetes-deployment-examples-create-update-rollback-and-more/
+  - https://medium.com/@muppedaanvesh/rolling-update-recreate-deployment-strategies-in-kubernetes-%EF%B8%8F-327b59f27202
+tags: [deployment, strategy, rollingupdate, recreate, scaling, ingress, nginx]
+objectives:
+  - Compare rolling vs recreate strategies by updating container image
+  - Observe pod replacement patterns and potential downtime on recreate
+  - Scale a deployment and observe service endpoints
+prerequisites:
+  - NGINX Ingress Controller installed with TLS secret "demo-tls" (provided in this repo’s cluster setup)
+notes:
+  - Rolling update example:
+      - kubectl set image deploy/deployments-rolling-updates-rolling app=nginx:1.27-alpine -n "$KEMO_NS"
+      - kubectl rollout status deploy/deployments-rolling-updates-rolling -n "$KEMO_NS"
+  - Recreate example (expect brief downtime on /recreate):
+      - kubectl set image deploy/deployments-rolling-updates-recreate app=nginx:1.27-alpine -n "$KEMO_NS"
+      - kubectl rollout status deploy/deployments-rolling-updates-recreate -n "$KEMO_NS"
+  - Scaling demo:
+      - kubectl scale deploy/deployments-rolling-updates-rolling --replicas=4 -n "$KEMO_NS"

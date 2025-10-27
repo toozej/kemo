@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-quotas
+  labels:
+    app: resource-quotas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-quotas
+  template:
+    metadata:
+      labels:
+        app: resource-quotas
+    spec:
+      volumes:
+        - name: web
+          emptyDir: {}
+      initContainers:
+        - name: init-web
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              cat >/work/index.html <<'EOF_HTML'
+              <!doctype html>
+              <html><head><meta charset="utf-8" /><title>ResourceQuota + LimitRange</title>
+              <style>body{font-family:system-ui,sans-serif;padding:20px}</style></head>
+              <body>
+                <h1>ResourceQuota + LimitRange Demo</h1>
+                <p>This namespace enforces a ResourceQuota and a LimitRange with default requests/limits.</p>
+                <ul>
+                  <li>ResourceQuota hard caps compute and object counts</li>
+                  <li>LimitRange sets defaults/min/max per container</li>
+                </ul>
+                <p>Pod: ${POD_NAME}</p>
+                <p>Node: ${NODE_NAME}</p>
+              </body></html>
+              EOF_HTML
+          volumeMounts:
+            - name: web
+              mountPath: /work
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web
+              mountPath: /usr/share/nginx/html

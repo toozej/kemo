@@ -1,0 +1,40 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qos-classes
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - qos-classes-good.k8s.orb.local
+      secretName: demo-tls
+  rules:
+    - host: qos-classes-good.k8s.orb.local
+      http:
+        paths:
+          - path: /best-effort
+            pathType: Prefix
+            backend:
+              service:
+                name: qos-best-effort
+                port:
+                  number: 80
+          - path: /burstable
+            pathType: Prefix
+            backend:
+              service:
+                name: qos-burstable
+                port:
+                  number: 80
+          - path: /guaranteed
+            pathType: Prefix
+            backend:
+              service:
+                name: qos-guaranteed
+                port:
+                  number: 80

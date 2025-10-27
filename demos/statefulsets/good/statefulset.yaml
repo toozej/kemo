@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulsets
+spec:
+  # Governing service for stable network identities (headless)
+  serviceName: statefulsets-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app: statefulsets
+  template:
+    metadata:
+      labels:
+        app: statefulsets
+    spec:
+      # Writes per-pod content to the shared volume to demonstrate stability/persistence
+      initContainers:
+        - name: init-index
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "StatefulSet demo (nginx)" > /data/index.html
+              echo "Pod: $(hostname)" >> /data/index.html
+              date >> /data/index.html
+          volumeMounts:
+            - name: web
+              mountPath: /data
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: web
+              mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+    - metadata:
+        name: web
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 128Mi

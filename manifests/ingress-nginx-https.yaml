@@ -9,11 +9,11 @@ metadata:
 spec:
   tls:
   - hosts:
-    - "*.demo.local"
-    - "demo.local"
+    - "k8s.orb.local"
+    - "k8s.mk.local"
     secretName: demo-tls
   rules:
-  - host: "*.demo.local"
+  - host: "k8s.orb.local"
     http:
       paths:
       - path: /
@@ -23,7 +23,7 @@ spec:
             name: demo-service
             port:
               number: 80
-  - host: "demo.local"
+  - host: "k8s.mk.local"
     http:
       paths:
       - path: /

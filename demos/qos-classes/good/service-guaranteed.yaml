@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qos-guaranteed
+spec:
+  selector:
+    app: qos-guaranteed
+  ports:
+    - port: 80
+      targetPort: 80

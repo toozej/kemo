@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probes
+  template:
+    metadata:
+      labels:
+        app: probes
+    spec:
+      volumes:
+        - name: web
+          emptyDir: {}
+      initContainers:
+        - name: init-web
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              cat >/work/index.html <<'EOF'
+              <!doctype html>
+              <html>
+                <head>
+                  <meta charset="utf-8" />
+                  <title>K8s Probes Demo</title>
+                  <style>body{font-family:system-ui, sans-serif; padding:20px}</style>
+                </head>
+                <body>
+                  <h1>Probes: liveness, readiness, startup</h1>
+                  <p>This page is served by NGINX from a shared volume.</p>
+                  <ul>
+                    <li>Liveness: HTTP GET /</li>
+                    <li>Readiness: HTTP GET /ready</li>
+                    <li>Startup: HTTP GET /</li>
+                  </ul>
+                </body>
+              </html>
+              EOF
+          volumeMounts:
+            - name: web
+              mountPath: /work
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web
+              mountPath: /usr/share/nginx/html
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 30
+            periodSeconds: 1
+        - name: sidecar-writer
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              # Delay to simulate app warmup before becoming Ready
+              sleep 5
+              while true; do
+                echo OK > /work/ready
+                sleep 5
+              done
+          volumeMounts:
+            - name: web
+              mountPath: /work

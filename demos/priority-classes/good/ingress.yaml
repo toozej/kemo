@@ -1,0 +1,33 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: priority-classes
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - priority-classes-good.k8s.orb.local
+      secretName: demo-tls
+  rules:
+    - host: priority-classes-good.k8s.orb.local
+      http:
+        paths:
+          - path: /high
+            pathType: Prefix
+            backend:
+              service:
+                name: priority-high
+                port:
+                  number: 80
+          - path: /low
+            pathType: Prefix
+            backend:
+              service:
+                name: priority-low
+                port:
+                  number: 80

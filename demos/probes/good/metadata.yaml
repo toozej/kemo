@@ -1,0 +1,13 @@
+---
+name: Probes (Liveness/Readiness/Startup) - Working
+description: |
+  Demonstrates Kubernetes probes with an nginx web server. A sidecar writes a readiness file causing readiness to succeed after warmup; liveness and startup probe verify ongoing health.
+source: https://medium.com/@muppedaanvesh/a-hands-on-guide-to-kubernetes-probes-liveness-readiness-and-startup-probes-ee047ebab504
+tags: [probes, liveness, readiness, startup, deployment, nginx, networking, good]
+objectives:
+  - Observe startupProbe gating liveness until nginx is up
+  - See readiness become True after the sidecar creates /ready
+  - Access via HTTPS at probes-good.k8s.orb.local or probes-good.k8s.mk.local
+observations:
+  - Pod transitions from ContainerCreating -> Running (not Ready) -> Ready
+  - Liveness continues succeeding while readiness can flap if /ready is removed (not in this demo)

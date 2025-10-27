@@ -35,6 +35,16 @@ export KEMO_STEP="$step"
 export KEMO_LOG_FILE="$log_file"
 export KEMO_NS="$demo-$variant"
 
+# Detect provider if not already set (orbstack vs minikube)
+if [[ -z "${KEMO_PROVIDER:-}" ]]; then
+  current_context="$(kubectl config current-context 2>/dev/null || echo "")"
+  if [[ "$current_context" == "orbstack" ]]; then
+    export KEMO_PROVIDER="orbstack"
+  else
+    export KEMO_PROVIDER="minikube"
+  fi
+fi
+
 # Helper function to ensure tmux uses the Kemo Tmux config file
 # Usage: tmux_cmd <tmux arguments>
 tmux_cmd() {
@@ -78,6 +88,7 @@ tmux_cmd set-environment -t "$session_name" KEMO_VARIANT "$variant"
 tmux_cmd set-environment -t "$session_name" KEMO_NS "$demo-$variant"
 tmux_cmd set-environment -t "$session_name" KEMO_STEP "$step"
 tmux_cmd set-environment -t "$session_name" KEMO_LOG_FILE "$log_file"
+tmux_cmd set-environment -t "$session_name" KEMO_PROVIDER "${KEMO_PROVIDER}"
 tmux_cmd set-environment -t "$session_name" KEMO_SESSION "$session_name"
 tmux_cmd set-environment -t "$session_name" SCRIPT_DIR "$SCRIPT_DIR"
 tmux_cmd set-environment -t "$session_name" PROJECT_ROOT "$PROJECT_ROOT"

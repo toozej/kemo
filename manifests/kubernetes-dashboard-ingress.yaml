@@ -9,14 +9,25 @@ metadata:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-    kubernetes.io/ingress.class: "nginx"
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
-    - dashboard.demo.local
+    - dashboard.k8s.orb.local
+    - dashboard.k8s.mk.local
     secretName: demo-tls
   rules:
-  - host: dashboard.demo.local
+  - host: dashboard.k8s.orb.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kubernetes-dashboard-kong-proxy
+            port:
+              number: 443
+  - host: dashboard.k8s.mk.local
     http:
       paths:
       - path: /

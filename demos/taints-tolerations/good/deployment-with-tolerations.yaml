@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taints-tolerations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taints-tolerations
+  template:
+    metadata:
+      labels:
+        app: taints-tolerations
+    spec:
+      tolerations:
+        - key: "demo"
+          operator: "Equal"
+          value: "tainted"
+          effect: "NoSchedule"
+      containers:
+        - name: app
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80

@@ -1,0 +1,19 @@
+---
+name: Ingress Routing - Working
+description: Demonstrates Nginx Ingress path-based routing to two backends. Each backend serves distinct content created by an initContainer, showing pod identity.
+source: https://medium.com/@muppedaanvesh/%EF%B8%8F-exploring-types-of-routing-based-ingresses-in-kubernetes-da56f51b3a6b
+tags:
+  - ingress
+  - routing
+  - nginx
+  - paths
+  - tls
+  - networking
+  - good
+objectives:
+  - Access https://ingress-routing-good.k8s.orb.local or ingress-routing-good.k8s.mk.local/app1 and /app2 and observe different content
+  - Verify TLS termination via demo-tls and Nginx Ingress annotations
+  - Confirm Deployments and Services are healthy and routes resolve
+observations:
+  - Ingress routes based on URL path to the correct Service
+  - Pods serve content including HOSTNAME indicating which backend responded

@@ -1,0 +1,8 @@
+---
+resources:
+  - priorityclasses.yaml
+  - deployment-high.yaml
+  - deployment-low.yaml
+  - service-high.yaml
+  - service-low.yaml
+  - ingress.yaml

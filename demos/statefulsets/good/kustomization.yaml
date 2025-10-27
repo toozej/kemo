@@ -1,0 +1,6 @@
+---
+resources:
+  - statefulset.yaml
+  - service.yaml
+  - service-headless.yaml
+  - ingress.yaml

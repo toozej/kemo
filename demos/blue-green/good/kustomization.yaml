@@ -1,0 +1,7 @@
+---
+resources:
+  - deployment-blue.yaml
+  - deployment-green.yaml
+  - service-blue.yaml
+  - service-green.yaml
+  - ingress.yaml

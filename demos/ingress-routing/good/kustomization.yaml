@@ -1,0 +1,7 @@
+---
+resources:
+  - deployment-app1.yaml
+  - service-app1.yaml
+  - deployment-app2.yaml
+  - service-app2.yaml
+  - ingress.yaml

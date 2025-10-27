@@ -1,0 +1,25 @@
+---
+name: Taints and Tolerations - Working
+description: |
+  Demonstrates scheduling with tolerations. The Deployment tolerates a NoSchedule taint
+  (key=demo, value=tainted). If a node is tainted, the pod can be scheduled onto it;
+  without taints present, the pod schedules normally. An Ingress exposes the app over HTTPS.
+source:
+  - https://medium.com/@muppedaanvesh/kubernetes-taints-tolerations-b0e0ed076cad
+  - https://github.com/anveshmuppeda/kubernetes/tree/main/examples/taints_tolerations
+tags: [taints, tolerations, scheduling, nginx, ingress, networking]
+objectives:
+  - Deploy an app with a toleration for key=demo,value=tainted,effect=NoSchedule
+  - Optionally taint a node and observe scheduling behavior
+  - Access the app via HTTPS Ingress
+prerequisites:
+  - NGINX Ingress Controller installed with TLS secret "demo-tls" (provided by this repo)
+notes: |-
+  Optional taint to test scheduling onto a tainted node:
+    kubectl taint nodes NODE_NAME demo=tainted:NoSchedule
+
+  Remove the taint:
+    kubectl taint nodes NODE_NAME demo:NoSchedule-
+
+  Access the app:
+    https://taints-tolerations-good.k8s.orb.local/

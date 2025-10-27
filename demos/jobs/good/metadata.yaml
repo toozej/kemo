@@ -1,0 +1,12 @@
+---
+name: Jobs - Working
+description: Demonstrates a Kubernetes Job with completions and parallelism. The worker runs a short task and exits successfully. Inspect Job status and logs to verify completions.
+source: https://medium.com/@muppedaanvesh/a-hand-on-guide-to-kubernetes-jobs-%EF%B8%8F-aa2edbb061ea
+tags: [jobs, batch, completions, parallelism, good]
+objectives:
+  - Create a Job with completions=3 and parallelism=2 and observe successful completion
+  - Review pod logs to confirm each task execution and exit
+  - Inspect Job status fields (succeeded, conditions)
+observations:
+  - Pods run to completion with restartPolicy Never
+  - Job reports Succeeded=3 when all tasks finish
