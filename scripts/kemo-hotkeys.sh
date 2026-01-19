@@ -26,7 +26,7 @@ case "$1" in
     read -n 1
     ;;
   k8s-dashboard)
-    gum style --foreground blue '🌐 Opening Kubernetes Dashboard via HTTPS ingress...'
+    gum style --foreground blue '🌐 Opening Headlamp dashboard via HTTPS ingress...'
     # Determine provider
     provider="${KEMO_PROVIDER:-}"
     if [[ -z "$provider" ]]; then
@@ -42,7 +42,7 @@ case "$1" in
     else
       dashboard_url='https://dashboard.k8s.mk.local/'
     fi
-    token=$(kubectl -n kubernetes-dashboard create token dashboard-user 2>/dev/null)
+    token=$(kubectl -n headlamp create token headlamp-admin 2>/dev/null)
     if [[ -n "$token" ]]; then
       if command -v pbcopy >/dev/null; then
         echo "$token" | pbcopy
@@ -61,7 +61,7 @@ case "$1" in
     else
       gum style --foreground yellow "📋 Dashboard URL: $dashboard_url"
     fi
-    gum style --foreground cyan 'Paste the token into the dashboard login screen.'
+    gum style --foreground cyan 'Paste the token into Headlamp to authenticate.'
     ;;
   logs)
     kubectl logs -f -n "$KEMO_NS" 2>/dev/null || {

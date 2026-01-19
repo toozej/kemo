@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: demo-ingress
+    annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+    ingressClassName: traefik
+    tls:
+        - hosts:
+              - "k8s.orb.local"
+              - "k8s.mk.local"
+          secretName: demo-tls
+    rules:
+        - host: "k8s.orb.local"
+          http:
+              paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: demo-service
+                            port:
+                                number: 80
+        - host: "k8s.mk.local"
+          http:
+              paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: demo-service
+                            port:
+                                number: 80

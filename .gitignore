@@ -10,3 +10,5 @@ certs/*.pem
 
 # temporary files
 .url_path
+TODO.md
+tutorials.md

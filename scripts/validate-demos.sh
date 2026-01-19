@@ -82,7 +82,7 @@ for d in "${demos[@]}"; do
   if [[ ! -f "$d/ingress.yaml" ]]; then
     passed_check_messages+=("Ingress not needed")
   else
-    if grep -q 'ingressClassName: nginx' "$d/ingress.yaml" && \
+    if grep -q 'ingressClassName: traefik' "$d/ingress.yaml" && \
        grep -q 'secretName: demo-tls' "$d/ingress.yaml" && \
        grep -q "host: $host" "$d/ingress.yaml"; then
       passed_check_messages+=("Ingress class/TLS/host")

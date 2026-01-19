@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hello-world
+  name: k8s-intro
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -11,16 +11,16 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - hello-world-bad.k8s.orb.local
+        - kubernetes-intro-bad.k8s.orb.local
       secretName: demo-tls
   rules:
-    - host: hello-world-bad.k8s.orb.local
+    - host: kubernetes-intro-bad.k8s.orb.local
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: hello-world
+                name: k8s-intro
                 port:
                   number: 80

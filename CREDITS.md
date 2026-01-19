@@ -17,8 +17,8 @@ The initial idea for this project came when I was reading [this article](https:/
 ### Orbstack
 - https://docs.orbstack.dev/kubernetes/
 
-### Ingress-NGINX
-- https://kubernetes.github.io/ingress-nginx/deploy/#quick-start
+### Traefik
+- https://doc.traefik.io/traefik/getting-started/install-traefik/#use-the-helm-chart
 
 ### Kubernetes Dashboard
 - https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md

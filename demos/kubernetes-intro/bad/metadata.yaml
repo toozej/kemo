@@ -1,0 +1,18 @@
+---
+name: Kubernetes Fundamentals - Broken (Reconciliation Failure)
+description: |
+  A broken version demonstrating what happens when the Kubernetes
+  runtime CANNOT reconcile to desired state. Uses a non-existent
+  image to show the runtime stuck in a reconciliation loop.
+source: https://garnaudov.com/writings/how-i-think-about-kubernetes/
+tags: [intro, fundamentals, beginner, concepts, broken]
+objectives:
+  - See what happens when the runtime can't reach desired state
+  - Observe ImagePullBackOff errors in pod status
+  - Understand how spec vs status reveals the problem
+  - Learn to debug using the runtime's feedback
+observations:
+  - Deployment is created but pods never become Ready
+  - Pod status shows ImagePullBackOff or ErrImagePull
+  - The runtime keeps trying (reconciliation loop) but fails
+  - status section explains why spec cannot be achieved

@@ -12,17 +12,17 @@ kubernetes-setup:
         gum style --foreground green '🟢 OrbStack detected, using OrbStack'; \
         just start-orbstack; \
         just use-orbstack; \
-        just install-ingress-nginx-https; \
+        just install-traefik; \
         just setup-https; \
-        just install-kubernetes-dashboard; \
+        just install-headlamp; \
         KEMO_PROVIDER="{{k8s-provider}}" just configure-hosts dashboard; \
     else \
         gum style --foreground blue '🔵 OrbStack not found, falling back to Minikube'; \
         just start-minikube; \
         just use-minikube; \
-        just install-ingress-nginx-https; \
+        just install-traefik; \
         just setup-https; \
-        just install-kubernetes-dashboard; \
+        just install-headlamp; \
         KEMO_PROVIDER="{{k8s-provider}}" just configure-hosts dashboard; \
     fi
 
@@ -114,30 +114,35 @@ clean-minikube:
         gum spin --spinner dot --title "Deleting Minikube..." -- minikube delete; \
     fi
 
-install-ingress-nginx-https:
-    @gum style --foreground cyan "🔧 Installing Ingress-NGINX with HTTPS support..."
-    @gum spin --spinner dot --title "Installing Ingress-NGINX..." -- \
-        helm upgrade --install ingress-nginx ingress-nginx \
-        --repo https://kubernetes.github.io/ingress-nginx \
-        --namespace ingress-nginx --create-namespace
-    @gum spin --spinner dot --title "Waiting for Ingress-NGINX to be ready..." -- \
-        kubectl wait -n ingress-nginx --for=condition=Ready pod -l app.kubernetes.io/component=controller --timeout=120s
-    @gum style --foreground green "✅ Ingress-NGINX with HTTPS support installed"
-
-install-kubernetes-dashboard:
-    @gum style --foreground cyan "🔧 Installing Kubernetes Dashboard via Helm..."
-    @gum spin --spinner dot --title "Adding dashboard repo..." -- \
-        helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+install-traefik:
+    @gum style --foreground cyan "🔧 Installing Traefik with HTTPS support..."
+    @gum spin --spinner dot --title "Adding Traefik Helm repo..." -- \
+        helm repo add traefik https://traefik.github.io/charts
     @gum spin --spinner dot --title "Updating Helm repos..." -- \
         helm repo update
-    @gum spin --spinner dot --title "Installing dashboard..." -- \
-        helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard  --create-namespace --namespace kubernetes-dashboard
-    @gum spin --spinner dot --title "Configuring dashboard-user..." -- \
-        kubectl apply --namespace kubernetes-dashboard -f ./manifests/kubernetes-dashboard-sa.yaml && sleep 1
-    @gum spin --spinner dot --title "Creating TLS secret for dashboard..." -- \
-        just create-tls-secret kubernetes-dashboard && sleep 1
-    @gum spin --spinner dot --title "Setting up dashboard ingress..." -- \
-        kubectl apply -f ./manifests/kubernetes-dashboard-ingress.yaml && sleep 1
+    @gum spin --spinner dot --title "Installing Traefik..." -- \
+        helm upgrade --install traefik traefik/traefik \
+        --namespace traefik --create-namespace \
+        --set "providers.kubernetesIngress.ingressClass=traefik" \
+        --set "providers.kubernetesIngress.publishedService.enabled=true"
+    #@gum spin --spinner dot --title "Waiting for Traefik to be ready..." -- \
+        #kubectl wait -n traefik --for=condition=Ready pod -l app.kubernetes.io/name=traefik --timeout=300s
+    @gum style --foreground green "✅ Traefik with HTTPS support installed"
+
+install-headlamp:
+    @gum style --foreground cyan "🔧 Installing Headlamp via Helm..."
+    @gum spin --spinner dot --title "Adding Headlamp repo..." -- \
+        helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
+    @gum spin --spinner dot --title "Updating Helm repos..." -- \
+        helm repo update
+    @gum spin --spinner dot --title "Installing Headlamp..." -- \
+        helm upgrade --install headlamp headlamp/headlamp --namespace headlamp --create-namespace
+    @gum spin --spinner dot --title "Configuring headlamp-admin service account..." -- \
+        kubectl apply --namespace headlamp -f ./manifests/headlamp-sa.yaml && sleep 1
+    @gum spin --spinner dot --title "Creating TLS secret for Headlamp..." -- \
+        just create-tls-secret headlamp && sleep 1
+    @gum spin --spinner dot --title "Setting up Headlamp ingress..." -- \
+        kubectl apply -f ./manifests/headlamp-ingress.yaml && sleep 1
 
 create-namespace demo variant k8s-provider:
     #!/usr/bin/env bash
@@ -214,15 +219,33 @@ run-demo demo variant full_setup="true":
         fi; \
     fi
 
+# Record a specific VHS tape
+record-demo name:
+    @gum style --foreground cyan "🎬 Recording {{name}}..."
+    vhs recordings/{{name}}.tape
+    @gum style --foreground green "✅ Recording saved to recordings/{{name}}.gif"
+
+# Record all VHS tapes in recordings/
+record-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gum style --foreground cyan "🎬 Recording all VHS tapes..."
+    for tape in recordings/*.tape; do
+        name=$(basename "$tape" .tape)
+        gum style --foreground blue "📹 Recording $name..."
+        vhs "$tape"
+    done
+    gum style --foreground green "✅ All recordings complete!"
+
 install-deps:
     @echo "🔧 Installing prerequisites for Kemo..."
     @if [ "$(uname)" = "Darwin" ]; then \
         echo "🍎 Detected macOS. Installing with brew..."; \
-        brew install minikube kubectl gum yq tmux helm nss mkcert kubeconform yamllint; \
+        brew install minikube kubectl gum yq tmux helm nss mkcert kubeconform yamllint charmbracelet/tap/vhs ttyd ffmpeg; \
         mkcert -install; \
     elif [ -f /etc/debian_version ]; then \
         echo "🐧 Detected Debian-based Linux. Installing with apt..."; \
-        sudo apt update && sudo apt install -y jq yq tmux curl gnupg lsb-release software-properties-common libnss3-tools mkcert yamllint; \
+        sudo apt update && sudo apt install -y jq yq tmux curl gnupg lsb-release software-properties-common libnss3-tools mkcert yamllint ffmpeg; \
         curl -s -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb && \
         sudo dpkg -i minikube_latest_amd64.deb && \
         rm minikube_latest_amd64.deb; \
@@ -232,10 +255,12 @@ install-deps:
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; \
         echo "    - Installing kubeconform..."; \
         curl -s -L "https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz" | tar xz && sudo mv kubeconform /usr/local/bin/; \
+        echo "    - Installing VHS..."; \
+        go install github.com/charmbracelet/vhs@latest || echo "⚠️ VHS requires Go - install manually if needed"; \
         mkcert -install; \
     elif [ -f /etc/redhat-release ]; then \
         echo "🐧 Detected RHEL-based Linux. Installing with dnf..."; \
-        sudo dnf install -y jq yq tmux helm nss-tools mkcert yamllint; \
+        sudo dnf install -y jq yq tmux helm nss-tools mkcert yamllint ffmpeg; \
         curl -s -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm && \
         sudo rpm -Uvh minikube-latest.x86_64.rpm && \
         rm minikube-latest.x86_64.rpm; \
@@ -244,9 +269,11 @@ install-deps:
           | xargs curl -L | tar xz && sudo mv gum /usr/local/bin/; \
         echo "    - Installing kubeconform..."; \
         curl -s -L "https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz" | tar xz && sudo mv kubeconform /usr/local/bin/; \
+        echo "    - Installing VHS..."; \
+        go install github.com/charmbracelet/vhs@latest || echo "⚠️ VHS requires Go - install manually if needed"; \
         mkcert -install; \
     else \
-        echo "❌ Unsupported system. Please install minikube, kubectl, gum, yq, helm, tmux, mkcert, kubeconform, and yamllint manually."; \
+        echo "❌ Unsupported system. Please install minikube, kubectl, gum, yq, helm, tmux, mkcert, kubeconform, yamllint, ffmpeg, and vhs manually."; \
         exit 1; \
     fi
     @gum style --foreground green "✅ All dependencies installed successfully!"
@@ -350,7 +377,7 @@ configure-https namespace="demo" demo="" variant="":
         gum style --foreground cyan "🌐 Access your demo at: https://$DISPLAY_NAME"
     else
         # Apply HTTPS ingress configuration for simple namespace format
-        sed "s/demo-service/{{namespace}}-service/g; s/namespace: ingress-nginx/namespace: {{namespace}}/g" manifests/ingress-nginx-https.yaml | \
+        sed "s/demo-service/{{namespace}}-service/g; s/namespace: traefik/namespace: {{namespace}}/g" manifests/traefik-https.yaml | \
             kubectl apply -f -
         gum style --foreground green "✅ HTTPS configured for namespace '{{namespace}}'"
         gum style --foreground cyan "🌐 Access your demo at: https://$DISPLAY_NAME"
@@ -407,8 +434,8 @@ configure-hosts namespace="demo" demo="" variant="":
         DISPLAY_NAME="$MK_HOST"
     fi
     gum style --foreground cyan "🔧 Configuring DNS for '$DISPLAY_NAME'..."
-    # Get ingress controller external IP
-    INGRESS_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    # Get Traefik external IP
+    INGRESS_IP=$(kubectl get svc traefik -n traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     if [[ -z "$INGRESS_IP" ]]; then
         gum style --foreground red "❌ Could not find ingress controller external IP"
         exit 1

@@ -300,6 +300,31 @@ minikube start
 3. **Verbose Mode**: Add `KEMO_VERBOSE=true` before commands
 4. **Reset Environment**: `./kemo kubernetes-cleanup && ./kemo kubernetes-setup`
 
+## 📹 Terminal Recordings
+
+Kemo supports creating terminal GIF recordings using [VHS](https://github.com/charmbracelet/vhs).
+
+### Installing VHS
+```bash
+./kemo install-vhs
+```
+
+### Creating Recordings
+```bash
+# Record a specific tape
+./kemo record-demo demo-overview
+
+# Record all tapes
+./kemo record-all
+```
+
+### VHS Tape Files
+Tape files are stored in `recordings/` and define the terminal sessions to record:
+- `demo-overview.tape` - Shows available commands and health check
+- `run-demo.tape` - Demonstrates running a demo
+
+Generated GIF files are saved to `recordings/*.gif` (gitignored).
+
 ## 🤝 Contributing
 
 1. Fork the repository

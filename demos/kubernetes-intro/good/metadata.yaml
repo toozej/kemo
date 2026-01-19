@@ -1,0 +1,20 @@
+---
+name: Kubernetes Fundamentals - Introduction
+description: |
+  A first-time user introduction to Kubernetes core concepts.
+  Learn how to think about Kubernetes as a "runtime for declarative
+  infrastructure with a type system" rather than just an orchestrator.
+  This demo walks through the mental models that make K8s click.
+source: https://garnaudov.com/writings/how-i-think-about-kubernetes/
+tags: [intro, fundamentals, beginner, concepts]
+objectives:
+  - Understand Kubernetes as a typed runtime, not just an orchestrator
+  - Learn the core types: Pod, Deployment, Service, Ingress
+  - See the reconciliation loop in action (declare → persist → reconcile)
+  - Understand spec vs status as inputs and outputs
+  - Observe self-healing behavior when pods are deleted
+observations:
+  - Pod is created after declaring intent via kubectl apply
+  - Deleting a pod causes the Deployment controller to recreate it
+  - spec shows what you want, status shows what the runtime observed
+  - The runtime continuously works to match desired state
