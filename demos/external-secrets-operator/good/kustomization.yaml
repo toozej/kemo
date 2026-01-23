@@ -1,0 +1,11 @@
+---
+resources:
+  - backing-secret.yaml
+  - serviceaccount.yaml
+  - role.yaml
+  - rolebinding.yaml
+  - secretstore.yaml
+  - externalsecret.yaml
+  - consumer-deployment.yaml
+  - service.yaml
+  - ingress.yaml

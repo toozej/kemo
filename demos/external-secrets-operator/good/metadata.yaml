@@ -1,0 +1,31 @@
+---
+name: External Secrets Operator (Kubernetes Provider) - Working
+description: |
+  Demonstrates syncing a Secret via External Secrets Operator using the Kubernetes provider.
+  A backing native Secret (eso-backing) is read by ESO (via a namespaced SecretStore) to
+  materialize a target Secret (eso-synced). A consumer Deployment reads the synced value and
+  exposes it via an HTTP echo endpoint.
+source:
+  - https://medium.com/@muppedaanvesh/a-hands-on-guide-to-kubernetes-external-secrets-operator-%EF%B8%8F-6e630c2da25e
+  - https://external-secrets.io/latest/provider/kubernetes/
+tags: [external-secrets, eso, secrets, kubernetes-provider, ingress, demo]
+objectives:
+  - Configure a namespaced SecretStore using the Kubernetes provider
+  - Sync data from a backing Secret into a target Secret via ExternalSecret
+  - Consume the synced Secret in a pod and expose it over HTTPS Ingress
+prerequisites:
+  - NGINX Ingress Controller with TLS secret "demo-tls" (provided by this repo)
+  - External Secrets Operator and CRDs installed cluster-wide. Install with Helm if needed:
+      - helm repo add external-secrets https://charts.external-secrets.io
+      - helm repo update
+      - helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace
+notes: |-
+  The Kubernetes provider uses a ServiceAccount (eso-provider) in this namespace with RBAC to read
+  the backing Secret (eso-backing). ESO syncs to a target Secret named eso-synced.
+
+  Verify resources:
+    kubectl get secretstore,externalsecret,secrets -n "$KEMO_NS"
+    kubectl describe externalsecret eso-example -n "$KEMO_NS"
+
+  Access the consumer app (env endpoint shows injected variables):
+    https://external-secrets-operator-good.k8s.orb.local/env

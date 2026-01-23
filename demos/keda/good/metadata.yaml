@@ -1,0 +1,30 @@
+---
+name: KEDA Cron-based Scaling - Working
+description: |
+  Demonstrates KEDA-driven cron-based scaling for a simple NGINX app. The ScaledObject
+  scales the Deployment between 0 and 1 replica based on a cron window (UTC).
+source:
+  - https://github.com/anveshmuppeda/kubernetes/tree/main/examples/KEDA
+  - https://keda.sh/docs/latest/
+tags: [keda, autoscaling, cron, scaler, nginx, ingress]
+objectives:
+  - Deploy a simple HTTP app and expose it via HTTPS Ingress
+  - Use a KEDA ScaledObject with a cron trigger to scale between 0 and 1 replica
+  - Observe scaling behavior across the scheduled window
+prerequisites:
+  - NGINX Ingress Controller with TLS secret "demo-tls" (provided by this repo)
+  - KEDA operator and CRDs installed cluster-wide. Install with Helm if needed:
+      - helm repo add kedacore https://kedacore.github.io/charts
+      - helm repo update
+      - helm install keda kedacore/keda --namespace keda --create-namespace
+notes: |-
+  The cron trigger uses UTC time. Between minute 0 and 5 each hour, desiredReplicas=1; outside
+  that window, KEDA will scale to 0.
+
+  Check status:
+    kubectl get scaledobjects -n "$KEMO_NS"
+    kubectl describe scaledobject keda-cron -n "$KEMO_NS"
+    kubectl get deploy keda -n "$KEMO_NS"
+
+  Access the app when replicas > 0:
+    https://keda-good.k8s.orb.local/

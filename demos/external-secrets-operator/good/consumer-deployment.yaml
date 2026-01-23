@@ -1,0 +1,26 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: external-secrets-operator
+  template:
+    metadata:
+      labels:
+        app: external-secrets-operator
+    spec:
+      containers:
+        - name: app
+          image: mendhak/http-https-echo:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SECRET_VALUE
+              valueFrom:
+                secretKeyRef:
+                  name: eso-synced
+                  key: SECRET_VALUE

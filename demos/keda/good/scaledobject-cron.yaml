@@ -1,0 +1,20 @@
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: keda-cron
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: keda
+  minReplicaCount: 0
+  maxReplicaCount: 2
+  triggers:
+    - type: cron
+      metadata:
+        # Scale to 1 between minute 0 and 5 of every hour, otherwise scale to 0
+        timezone: UTC
+        start: "0 * * * *"
+        end: "5 * * * *"
+        desiredReplicas: "1"

@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: external-secrets-operator
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - external-secrets-operator-good.k8s.orb.local
+      secretName: demo-tls
+  rules:
+    - host: external-secrets-operator-good.k8s.orb.local
+      http:
+        paths:
+          - path: /env
+            pathType: Prefix
+            backend:
+              service:
+                name: external-secrets-operator
+                port:
+                  number: 80

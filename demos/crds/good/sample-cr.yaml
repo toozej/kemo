@@ -1,0 +1,13 @@
+---
+apiVersion: kemo.toozej.github.io/v1alpha1
+kind: Widget
+metadata:
+  name: sample-widget
+  labels:
+    app.kubernetes.io/name: crds
+    app.kubernetes.io/part-of: kemo
+spec:
+  size: medium
+  replicas: 2
+  image: nginx:1.25
+  enableTLS: false

@@ -1,0 +1,16 @@
+---
+name: Custom Resource Definitions (CRDs) - Working
+description: |
+  Demonstrates creating and using a Kubernetes CustomResourceDefinition (CRD) with validation
+  schema and additionalPrinterColumns. Includes a sample Custom Resource (Widget) instance.
+  This demo does not run a controller; it focuses on CRD authoring and lifecycle basics.
+source: https://medium.com/@muppedaanvesh/a-hand-on-guide-to-kubernetes-custom-resource-definitions-crds-with-a-practical-example-%EF%B8%8F-84094861e90b
+tags: [crd, api, extension, validation, custom-resources, working]
+objectives:
+  - Apply a namespaced CRD with structural schema validation
+  - Create a sample Custom Resource instance and inspect it
+  - Observe custom columns via kubectl get for improved UX
+observations:
+  - CRD appears in the cluster (kubectl get crds)
+  - Custom Resource can be created, listed, and described
+  - Custom columns show .spec.size and .spec.replicas values
