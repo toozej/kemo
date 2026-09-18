@@ -1,0 +1,15 @@
+---
+name: Kyverno Policy as Code
+description: |
+  Use a Kyverno Policy to require Kubernetes recommended labels on Deployments.
+source: https://kyverno.io/docs/policy-types/cluster-policy/validate/
+tags: [kyverno, policy-as-code, validation, admission-control, security]
+objectives:
+  - Install the Kyverno admission controller
+  - Apply a namespaced Kyverno Policy in Enforce mode
+  - Deploy a compliant Deployment
+  - Verify that Kyverno rejects a Deployment without the required label
+observations:
+  - The compliant Deployment starts successfully
+  - Kyverno rejects the noncompliant Deployment
+  - The Policy remains active in the demo namespace

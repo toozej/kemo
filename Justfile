@@ -124,10 +124,52 @@ install-traefik:
         helm upgrade --install traefik traefik/traefik \
         --namespace traefik --create-namespace \
         --set "providers.kubernetesIngress.ingressClass=traefik" \
-        --set "providers.kubernetesIngress.publishedService.enabled=true"
+        --set "providers.kubernetesIngress.publishedService.enabled=true" \
+        --set "deployment.podAnnotations.prometheus\\.io/port=9100" \
+        --set "deployment.podAnnotations.prometheus\\.io/scrape=true" \
+        --set "deployment.podAnnotations.prometheus\\.io/path=/metrics" \
+        --set "metrics.prometheus.entryPoint=metrics"
     #@gum spin --spinner dot --title "Waiting for Traefik to be ready..." -- \
         #kubectl wait -n traefik --for=condition=Ready pod -l app.kubernetes.io/name=traefik --timeout=300s
     @gum style --foreground green "✅ Traefik with HTTPS support installed"
+
+install-flux:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v flux >/dev/null 2>&1; then
+        gum style --foreground red "❌ flux is not installed. Run 'just install-deps' first."
+        exit 1
+    fi
+    gum style --foreground cyan "🔧 Installing Flux controllers..."
+    flux check --pre
+    flux install --namespace flux-system
+    flux check
+    gum style --foreground green "✅ Flux controllers are ready"
+
+install-flagger:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gum style --foreground cyan "🔧 Installing Flagger and Prometheus through Flux..."
+    kubectl apply -f manifests/flagger-helmrelease.yaml
+    flux reconcile source helm flagger --namespace flux-system
+    flux reconcile helmrelease flagger --namespace flux-system --with-source
+    kubectl wait --namespace flux-system --for=condition=Ready helmrelease/flagger --timeout=5m
+    gum style --foreground green "✅ Flux deployed Flagger and Prometheus"
+
+install-progressive-delivery: install-flux install-flagger
+
+install-kyverno:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gum style --foreground cyan "🔧 Installing Kyverno..."
+    helm repo add kyverno https://kyverno.github.io/kyverno/
+    helm repo update
+    helm upgrade --install kyverno kyverno/kyverno \
+        --namespace kyverno \
+        --create-namespace \
+        --wait \
+        --timeout 5m
+    gum style --foreground green "✅ Kyverno is ready"
 
 install-headlamp:
     @gum style --foreground cyan "🔧 Installing Headlamp via Helm..."
@@ -241,11 +283,12 @@ install-deps:
     @echo "🔧 Installing prerequisites for Kemo..."
     @if [ "$(uname)" = "Darwin" ]; then \
         echo "🍎 Detected macOS. Installing with brew..."; \
-        brew install minikube kubectl gum yq tmux helm nss mkcert kubeconform yamllint charmbracelet/tap/vhs ttyd ffmpeg; \
+        brew install minikube kubectl gum yq tmux helm nss mkcert kubeconform yamllint pre-commit charmbracelet/tap/vhs ttyd ffmpeg; \
+        brew install fairwindsops/tap/pluto fluxcd/tap/flux; \
         mkcert -install; \
     elif [ -f /etc/debian_version ]; then \
         echo "🐧 Detected Debian-based Linux. Installing with apt..."; \
-        sudo apt update && sudo apt install -y jq yq tmux curl gnupg lsb-release software-properties-common libnss3-tools mkcert yamllint ffmpeg; \
+        sudo apt update && sudo apt install -y jq yq tmux curl gnupg lsb-release software-properties-common libnss3-tools mkcert yamllint pre-commit ffmpeg; \
         curl -s -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb && \
         sudo dpkg -i minikube_latest_amd64.deb && \
         rm minikube_latest_amd64.deb; \
@@ -253,8 +296,13 @@ install-deps:
           | jq -r ".assets[] | select(.name | test(\"gum_.*_Linux_x86_64.tar.gz\")) | .browser_download_url" \
           | xargs curl -L | tar xz && sudo mv gum /usr/local/bin/; \
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; \
+        curl -s https://fluxcd.io/install.sh | sudo bash; \
         echo "    - Installing kubeconform..."; \
         curl -s -L "https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz" | tar xz && sudo mv kubeconform /usr/local/bin/; \
+        echo "    - Installing Pluto..."; \
+        curl -s https://api.github.com/repos/FairwindsOps/pluto/releases/latest \
+          | jq -r '.assets[] | select(.name | test("pluto_.*_linux_amd64.tar.gz")) | .browser_download_url' \
+          | xargs curl -L | tar xz && sudo mv pluto /usr/local/bin/; \
         echo "    - Installing VHS..."; \
         go install github.com/charmbracelet/vhs@latest || echo "⚠️ VHS requires Go - install manually if needed"; \
         mkcert -install; \
@@ -273,7 +321,7 @@ install-deps:
         go install github.com/charmbracelet/vhs@latest || echo "⚠️ VHS requires Go - install manually if needed"; \
         mkcert -install; \
     else \
-        echo "❌ Unsupported system. Please install minikube, kubectl, gum, yq, helm, tmux, mkcert, kubeconform, yamllint, ffmpeg, and vhs manually."; \
+        echo "❌ Unsupported system. Please install minikube, kubectl, gum, yq, helm, tmux, mkcert, kubeconform, pluto, flux, pre-commit, yamllint, ffmpeg, and vhs manually."; \
         exit 1; \
     fi
     @gum style --foreground green "✅ All dependencies installed successfully!"
@@ -283,7 +331,7 @@ health-check:
     #!/usr/bin/env bash
     set -euo pipefail
     gum style --foreground cyan --bold "🏥 Kemo Health Check"
-    checks=("kubectl" "gum" "yq" "tmux" "helm" "just")
+    checks=("kubectl" "gum" "yq" "tmux" "helm" "just" "kubeconform" "pluto" "flux" "pre-commit")
     for cmd in ${checks[@]}; do
         if command -v "$cmd" >/dev/null 2>&1; then
             gum style --foreground green "✅ $cmd available"
@@ -323,6 +371,9 @@ cycle:
 # Validate all demo configurations
 validate-demos:
 	@scripts/validate-demos.sh
+
+install-git-hooks:
+    @pre-commit install
 
 clean-demo-namespace demo variant:
     #!/usr/bin/env bash

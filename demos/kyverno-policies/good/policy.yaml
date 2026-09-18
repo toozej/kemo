@@ -1,0 +1,24 @@
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: require-kubernetes-labels
+  labels:
+    app.kubernetes.io/name: require-kubernetes-labels
+    app.kubernetes.io/part-of: kyverno-policy-demo
+spec:
+  rules:
+    - name: require-deployment-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        failureAction: Enforce
+        message: app.kubernetes.io/name and app.kubernetes.io/part-of are required.
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/part-of: "?*"

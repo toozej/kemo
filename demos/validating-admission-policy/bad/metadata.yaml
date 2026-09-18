@@ -1,0 +1,15 @@
+---
+name: Kubernetes Validating Admission Policy Rejection
+description: |
+  Submit a Deployment that does not meet a Validating Admission Policy requirement.
+source: https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/
+tags: [policy-as-code, validation, admission-control, cel, kubernetes, bad]
+objectives:
+  - Apply a Kubernetes ValidatingAdmissionPolicy and its binding
+  - Scope the binding to this demo namespace
+  - Submit a Deployment without the required labels
+  - Observe the expected API server rejection
+observations:
+  - The API server rejects the Deployment
+  - No policy-rejected Deployment is created
+  - The binding affects only namespaces with the demo label

@@ -1,0 +1,15 @@
+---
+name: Flux and Flagger with Traefik
+description: |
+  Install Flux and Flagger. Use Flagger to make a Traefik canary deployment.
+source: https://fluxcd.io/flagger/tutorials/traefik-progressive-delivery/
+tags: [flux, flagger, traefik, progressive-delivery, canary, gitops]
+objectives:
+  - Install Flux controllers in the flux-system namespace
+  - Install Flagger and Prometheus in the traefik namespace
+  - Create a Flagger Canary resource that controls a podinfo deployment
+  - Route external traffic through the Flagger TraefikService
+observations:
+  - Flux controllers run in the flux-system namespace
+  - Flagger creates primary and canary Services for podinfo
+  - Flagger shifts traffic when the podinfo image changes

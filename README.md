@@ -12,6 +12,9 @@ Kemo is pronounced like "Chem-Oh", or like "Ken-Oh" with an "m" instead of "n" a
 - **Demo Browser**: Interactive demo selector using `gum` with fuzzy search
 - **Multi-panel Interface**: Split-screen views for logs, resource monitoring, and execution
 - **Step-by-Step Execution**: Controlled demo progression with manual step execution
+- **Finish Lab Hotkey**: Run remaining steps and leave the demo resources available
+- **Progressive Delivery**: Flux and Flagger lab with Traefik canary routing
+- **Policy as Code**: Kyverno and Kubernetes Validating Admission Policy labs
 - **Intelligent Logging**: Timestamped logs with clean formatting for files
 - **Tag Filtering**: Organize and find demos by tags
 - **Variant System**: Compare working (`good/`) vs broken (`bad/`) scenarios
@@ -46,6 +49,8 @@ The `kemo` script is a wrapper around `just`. You can see all available commands
 
 # Utilities
 ./kemo install-deps              # Install all prerequisites
+./kemo install-git-hooks         # Install local manifest checks
+pre-commit run --all-files       # Run all manifest checks
 ```
 
 ## 📋 Prerequisites
@@ -61,6 +66,10 @@ Or install manually:
 - `yq` - YAML processor
 - `tmux` - Terminal multiplexer for TUI
 - `just` - Command runner
+- `kubeconform` - Kubernetes schema validator
+- `pluto` - Kubernetes API deprecation detector
+- `pre-commit` - Git hook manager
+- `flux` - Flux CLI for the Flux and Flagger lab
 
 ## 🎮 TUI Interface
 
@@ -87,6 +96,7 @@ All hotkeys use the prefix `Ctrl-k` followed by a command key:
 #### Demo Control
 - **`Ctrl-k r`** - Restart demo (deletes resources and reapplies)
 - **`Ctrl-k n`** - Execute next demo step
+- **`Ctrl-k f`** - Execute all remaining steps and leave the lab running
 - **`Ctrl-k q`** - Quit demo (with confirmation)
 - **`Ctrl-k ?`** - Show hotkeys help
 
@@ -113,6 +123,40 @@ The bottom status bar shows:
 - Current demo and variant
 - Hotkey reminder (`Ctrl-k ? for help`)
 - Session information
+
+### Finish a Demo as a Lab
+
+Use `Ctrl-k f` to execute all remaining demo steps. Kemo keeps the tmux session and Kubernetes resources running. Kemo reports any failed step. Use `Ctrl-k q` when you finish the lab.
+
+## ✅ Manifest Validation
+
+Install the Git hooks after you install the dependencies:
+
+```bash
+./kemo install-git-hooks
+```
+
+The hooks run kubeconform against changed Kubernetes manifests and affected Kustomize builds. The hooks run Pluto against affected manifest directories. Pluto reports deprecated Kubernetes API versions.
+
+Run all checks before you commit:
+
+```bash
+pre-commit run --all-files
+```
+
+## 🌊 Progressive Delivery and Policy Labs
+
+Run these labs with the standard demo command:
+
+```bash
+./kemo run-demo flux-flagger good
+./kemo run-demo kyverno-policies good
+./kemo run-demo kyverno-policies bad
+./kemo run-demo validating-admission-policy good
+./kemo run-demo validating-admission-policy bad
+```
+
+The Flux and Flagger lab installs Flux. Flux deploys Flagger and Prometheus through a HelmRelease. The lab also installs the Flagger load tester and creates a Traefik canary for podinfo. The Kyverno lab uses a namespaced Kyverno Policy. The Validating Admission Policy lab uses the Kubernetes built-in admission API.
 
 ## 🎯 Demo Selection Features
 

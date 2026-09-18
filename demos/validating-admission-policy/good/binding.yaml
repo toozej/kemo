@@ -1,0 +1,15 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-kemo-deployment-labels
+  labels:
+    app.kubernetes.io/name: require-kemo-deployment-labels
+    app.kubernetes.io/part-of: validating-admission-policy-demo
+spec:
+  policyName: require-kemo-deployment-labels
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kemo.example.com/policy-demo: validating-admission-policy

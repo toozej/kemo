@@ -1,0 +1,20 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: podinfo
+  labels:
+    app.kubernetes.io/name: podinfo
+    app.kubernetes.io/part-of: flux-flagger-demo
+spec:
+  entryPoints:
+    - websecure
+  tls:
+    secretName: demo-tls
+  routes:
+    - kind: Rule
+      match: Host(`flux-flagger-good.k8s.orb.local`)
+      services:
+        - kind: TraefikService
+          name: podinfo
+          port: 80

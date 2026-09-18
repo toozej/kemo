@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Kemo Demo Stepper - Execute demo run.sh scripts step-by-step
 
+set -euo pipefail
+
 # Check if required environment variables are set
 : "${KEMO_DEMO:?Environment variable KEMO_DEMO must be set}"
 : "${KEMO_VARIANT:?Environment variable KEMO_VARIANT must be set}" 
@@ -29,7 +31,7 @@ init_stepper() {
     local section=""
     local section_num=0
     
-    > "$COMMANDS_FILE"  # Clear commands file
+    : > "$COMMANDS_FILE"  # Clear commands file
     
     while IFS= read -r line || [[ -n "$line" ]]; do
         # Skip shebang line
@@ -40,10 +42,12 @@ init_stepper() {
         # If line is empty or a comment-only line, end current section
         if [[ -z "$line" || "$line" =~ ^[[:space:]]*$ ]] || [[ "$line" =~ ^[[:space:]]*#[[:space:]]*$ ]]; then
             if [[ -n "$section" ]]; then
-                echo "SECTION_${section_num}:" >> "$COMMANDS_FILE"
-                echo "$section" >> "$COMMANDS_FILE"
-                echo "---" >> "$COMMANDS_FILE"
-                ((section_num++))
+                {
+                    echo "SECTION_${section_num}:"
+                    echo "$section"
+                    echo "---"
+                } >> "$COMMANDS_FILE"
+                section_num=$((section_num + 1))
                 section=""
             fi
             continue
@@ -59,10 +63,12 @@ init_stepper() {
     
     # Don't forget the last section if script doesn't end with blank line
     if [[ -n "$section" ]]; then
-        echo "SECTION_${section_num}:" >> "$COMMANDS_FILE"
-        echo "$section" >> "$COMMANDS_FILE"
-        echo "---" >> "$COMMANDS_FILE"
-        ((section_num++))
+        {
+            echo "SECTION_${section_num}:"
+            echo "$section"
+            echo "---"
+        } >> "$COMMANDS_FILE"
+        section_num=$((section_num + 1))
     fi
     
     # Initialize current step to 0
@@ -104,8 +110,10 @@ get_step_command() {
 
 # Execute next step
 next_step() {
-    local current_step=$(get_current_step)
-    local total_steps=$(get_total_steps)
+    local current_step
+    local total_steps
+    current_step=$(get_current_step)
+    total_steps=$(get_total_steps)
     
     if [[ $total_steps -eq 0 ]]; then
         gum style --foreground yellow "⚠️  No steps available to execute"
@@ -118,7 +126,8 @@ next_step() {
         return 0
     fi
     
-    local command=$(get_step_command "$current_step")
+    local command
+    command=$(get_step_command "$current_step")
     
     if [[ -z "$command" ]]; then
         gum style --foreground red "❌ No command found for step $current_step"
@@ -126,9 +135,11 @@ next_step() {
     fi
     
     # Log the step execution
-    echo "[$current_step/$total_steps] Executing step $((current_step + 1)):" >> "$KEMO_LOG_FILE"
-    echo "$command" >> "$KEMO_LOG_FILE"
-    echo "---" >> "$KEMO_LOG_FILE"
+    {
+        echo "[$current_step/$total_steps] Executing step $((current_step + 1)):"
+        echo "$command"
+        echo "---"
+    } >> "$KEMO_LOG_FILE"
     
     # Display step info
     gum style --foreground cyan "📋 Step $((current_step + 1)) of $total_steps"
@@ -139,6 +150,7 @@ next_step() {
     gum style --foreground blue "🚀 Executing..."
 
     # Execute the command in the demo directory context
+    local step_result=0
     if (
         cd "$DEMO_DIR"
         # Use eval to properly handle complex bash constructs
@@ -147,9 +159,11 @@ next_step() {
         gum style --foreground green "✅ Step $((current_step + 1)) completed successfully"
         set_current_step $((current_step + 1))
     else
+        local exit_code=$?
         gum style --foreground red "❌ Step $((current_step + 1)) failed"
-        echo "Step $((current_step + 1)) failed with exit code $?" >> "$KEMO_LOG_FILE"
+        echo "Step $((current_step + 1)) failed with exit code $exit_code" >> "$KEMO_LOG_FILE"
         set_current_step $((current_step + 1))
+        step_result=1
     fi
 
     echo
@@ -158,6 +172,44 @@ next_step() {
     else
         gum style --foreground green "🎉 Demo completed! Press 'Ctrl-k r' to restart"
     fi
+
+    return "$step_result"
+}
+
+# Execute all remaining steps and leave the demo session and resources running.
+finish_stepper() {
+    local current_step
+    local total_steps
+    local failed_steps=0
+
+    current_step=$(get_current_step)
+    total_steps=$(get_total_steps)
+
+    if [[ $total_steps -eq 0 ]]; then
+        gum style --foreground yellow "⚠️  No steps are available to execute"
+        return 0
+    fi
+
+    if [[ $current_step -ge $total_steps ]]; then
+        gum style --foreground green "✅ The demo is already at its final state"
+        return 0
+    fi
+
+    gum style --foreground cyan "⏭️  Running steps $((current_step + 1)) through $total_steps"
+
+    while [[ $(get_current_step) -lt $total_steps ]]; do
+        if ! next_step; then
+            failed_steps=$((failed_steps + 1))
+        fi
+    done
+
+    if [[ $failed_steps -eq 0 ]]; then
+        gum style --foreground green "✅ The working lab is ready. The session and resources remain open."
+        return 0
+    fi
+
+    gum style --foreground red "❌ $failed_steps step(s) failed. Check the demo log before you use this lab."
+    return 1
 }
 
 # Reset stepper to beginning
@@ -168,8 +220,10 @@ reset_stepper() {
 
 # Show stepper status
 show_status() {
-    local current_step=$(get_current_step)
-    local total_steps=$(get_total_steps)
+    local current_step
+    local total_steps
+    current_step=$(get_current_step)
+    total_steps=$(get_total_steps)
     
     gum style --foreground cyan --bold "📊 Demo Stepper Status"
     echo
@@ -182,7 +236,8 @@ show_status() {
         if [[ $current_step -lt $total_steps ]]; then
             echo
             gum style --foreground yellow "Next command:"
-            local next_command=$(get_step_command "$current_step")
+            local next_command
+            next_command=$(get_step_command "$current_step")
             echo "$next_command" | gum style --foreground cyan --border normal --margin "0 2"
         fi
     fi
@@ -205,6 +260,9 @@ main() {
             ;;
         "reset")
             reset_stepper
+            ;;
+        "finish")
+            finish_stepper
             ;;
         "status")
             show_status

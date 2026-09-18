@@ -16,6 +16,9 @@ case "$1" in
   next-step)
     scripts/demo-stepper.sh next
     ;;
+  finish)
+    scripts/demo-stepper.sh finish
+    ;;
   k8s-status)
     clear
     gum style --foreground cyan --bold '📊 Kubernetes Status'
@@ -23,7 +26,7 @@ case "$1" in
     kubectl get pods,svc,deploy -n "$KEMO_NS" --no-headers 2>/dev/null || echo 'No resources found'
     echo
     gum style --foreground yellow 'Press any key to continue...'
-    read -n 1
+    read -r -n 1
     ;;
   k8s-dashboard)
     gum style --foreground blue '🌐 Opening Headlamp dashboard via HTTPS ingress...'
@@ -108,6 +111,7 @@ case "$1" in
     echo
     gum style --foreground white 'Ctrl-k r : Restart demo'
     gum style --foreground white 'Ctrl-k n : Execute next demo step'
+    gum style --foreground white 'Ctrl-k f : Run all remaining steps and keep the lab open'
     gum style --foreground white 'Ctrl-k s : Show Kubernetes status'
     gum style --foreground white 'Ctrl-k d : Open Kubernetes dashboard'
     gum style --foreground white 'Ctrl-k u : Open application URL'
@@ -124,11 +128,9 @@ case "$1" in
     gum style --foreground white 'Ctrl-k e : Watch events in new pane'
     echo
     gum style --foreground yellow 'Press any key to continue...'
-    read -n 1
+    read -r -n 1
     ;;
   *)
     gum style --foreground red "Unknown action: $1"
     ;;
 esac
-
-exit 0

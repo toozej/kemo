@@ -1,0 +1,15 @@
+---
+name: Kubernetes Validating Admission Policy
+description: |
+  Use the Kubernetes built-in Validating Admission Policy API to require labels on Deployments.
+source: https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/
+tags: [policy-as-code, validation, admission-control, cel, kubernetes]
+objectives:
+  - Apply a Kubernetes ValidatingAdmissionPolicy and its binding
+  - Scope the binding to this demo namespace
+  - Deploy a compliant Deployment
+  - Verify that the API server rejects a Deployment without required labels
+observations:
+  - The compliant Deployment starts successfully
+  - The API server rejects the noncompliant Deployment
+  - The binding affects only namespaces with the demo label

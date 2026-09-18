@@ -1,0 +1,24 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-kemo-deployment-labels
+  labels:
+    app.kubernetes.io/name: require-kemo-deployment-labels
+    app.kubernetes.io/part-of: validating-admission-policy-demo
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+  validations:
+    - expression: >-
+        has(object.metadata.labels) &&
+        object.metadata.labels.exists(label,
+        label == 'app.kubernetes.io/name') &&
+        object.metadata.labels.exists(label,
+        label == 'app.kubernetes.io/part-of')
+      message: app.kubernetes.io/name and app.kubernetes.io/part-of are required.

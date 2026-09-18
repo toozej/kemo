@@ -1,0 +1,17 @@
+repos:
+  - repo: local
+    hooks:
+      - id: kubeconform
+        name: Validate Kubernetes schemas with kubeconform
+        entry: scripts/pre-commit-kubernetes.sh kubeconform
+        language: system
+        types_or: [yaml]
+        pass_filenames: true
+        require_serial: true
+      - id: pluto
+        name: Detect deprecated Kubernetes APIs with Pluto
+        entry: scripts/pre-commit-kubernetes.sh pluto
+        language: system
+        types_or: [yaml]
+        pass_filenames: true
+        require_serial: true

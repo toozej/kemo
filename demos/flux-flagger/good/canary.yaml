@@ -1,0 +1,49 @@
+---
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: podinfo
+  labels:
+    app.kubernetes.io/name: podinfo
+    app.kubernetes.io/part-of: flux-flagger-demo
+spec:
+  provider: traefik
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: podinfo
+  progressDeadlineSeconds: 300
+  service:
+    port: 80
+    targetPort: http
+    portName: http
+  analysis:
+    interval: 10s
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+      - name: request-success-rate
+        interval: 1m
+        thresholdRange:
+          min: 99
+      - name: request-duration
+        interval: 1m
+        thresholdRange:
+          max: 500
+    webhooks:
+      - name: acceptance-test
+        type: pre-rollout
+        url: http://flagger-loadtester/
+        timeout: 10s
+        metadata:
+          type: bash
+          cmd: "curl -sd 'test' http://podinfo-canary/token | grep token"
+      - name: load-test
+        type: rollout
+        url: http://flagger-loadtester/
+        timeout: 5s
+        metadata:
+          type: cmd
+          cmd: "hey -z 1m -q 10 -c 2 -host flux-flagger-good.k8s.orb.local http://traefik.traefik"
+          logCmdOutput: "true"

@@ -16,6 +16,7 @@ gum style --foreground yellow "Step: $KEMO_STEP"
 echo
 gum style --foreground magenta 'Press Ctrl-k ? for hotkeys help'
 gum style --foreground cyan 'Press Ctrl-k n for next step'
+gum style --foreground cyan 'Press Ctrl-k f to run all remaining steps'
 echo
 
 # Show initial stepper status
