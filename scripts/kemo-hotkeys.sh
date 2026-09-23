@@ -6,18 +6,31 @@
 : "${KEMO_VARIANT:?Environment variable KEMO_VARIANT must be set}"
 : "${KEMO_NS:?Environment variable KEMO_NS must be set}"
 
+run_in_stepper() {
+  local action=$1
+
+  if [[ -z "${KEMO_STEPPER_PANE:-}" ]] || ! tmux display-message -p -t "$KEMO_STEPPER_PANE" '#{pane_id}' >/dev/null 2>&1; then
+    tmux display-message 'Stepper pane is unavailable'
+    return 1
+  fi
+
+  if ! tmux respawn-pane -t "$KEMO_STEPPER_PANE" "$SCRIPT_DIR/kemo-stepper-pane.sh $action" >/dev/null 2>&1; then
+    tmux display-message 'A demo step is already running'
+    return 1
+  fi
+
+  tmux select-pane -t "$KEMO_STEPPER_PANE"
+}
+
 case "$1" in
   restart)
-    gum style --foreground yellow '🔄 Restarting demo'
-    kubectl delete all --all -n "$KEMO_NS" 2>/dev/null || true
-    just apply-manifests "$KEMO_DEMO" "$KEMO_VARIANT"
-    scripts/demo-stepper.sh reset
+    run_in_stepper restart
     ;;
   next-step)
-    scripts/demo-stepper.sh next
+    run_in_stepper next
     ;;
   finish)
-    scripts/demo-stepper.sh finish
+    run_in_stepper finish
     ;;
   k8s-status)
     clear

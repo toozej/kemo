@@ -33,7 +33,7 @@ tmux_cmd split-window -t "$session_name:0.2" -v -p 50
 
 tmux_cmd respawn-pane -k -t "$session_name:0.0" "echo main-pane; sleep 1000"
 tmux_cmd respawn-pane -k -t "$session_name:0.1" "echo metadata-pane; sleep 1000"
-tmux_cmd respawn-pane -k -t "$session_name:0.2" "echo log-pane; sleep 1000"
+tmux_cmd respawn-pane -k -t "$session_name:0.2" "echo stepper-pane; sleep 1000"
 tmux_cmd respawn-pane -k -t "$session_name:0.3" "echo k8s-status-pane; sleep 1000"
 
 tmux_cmd attach-session -t "$session_name"

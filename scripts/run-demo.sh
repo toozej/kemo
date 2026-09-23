@@ -109,10 +109,15 @@ tmux_cmd split-window -t "$session_name:0.0" -v -p 15
 tmux_cmd split-window -t "$session_name:0.2" -v -p 50
 # After splitting, pane 0.0 is top left, 0.1 is bottom left, pane 0.2 is top right, 0.3 is bottom right
 
+# Keep completed step output visible until the next step starts.
+tmux_cmd set-window-option -t "$session_name:0" remain-on-exit on
+stepper_pane=$(tmux_cmd display-message -p -t "$session_name:0.2" '#{pane_id}')
+tmux_cmd set-environment -t "$session_name" KEMO_STEPPER_PANE "$stepper_pane"
+
 # Start processes in panes using respawn-pane with reusable scripts
 tmux_cmd respawn-pane -k -t "$session_name:0.0" "$SCRIPT_DIR/kemo-main-pane.sh $*"
 tmux_cmd respawn-pane -k -t "$session_name:0.1" "$SCRIPT_DIR/kemo-metadata-pane.sh"
-tmux_cmd respawn-pane -k -t "$session_name:0.2" "$SCRIPT_DIR/kemo-log-pane.sh"
+tmux_cmd respawn-pane -k -t "$stepper_pane" "$SCRIPT_DIR/kemo-stepper-pane.sh status"
 tmux_cmd respawn-pane -k -t "$session_name:0.3" "$SCRIPT_DIR/kemo-k8s-status-pane.sh"
 
 # Mark main pane as active

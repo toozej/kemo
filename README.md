@@ -10,7 +10,7 @@ Kemo is pronounced like "Chem-Oh", or like "Ken-Oh" with an "m" instead of "n" a
 
 - **Interactive TUI**: Full tmux-based terminal interface with hotkeys
 - **Demo Browser**: Interactive demo selector using `gum` with fuzzy search
-- **Multi-panel Interface**: Split-screen views for logs, resource monitoring, and execution
+- **Multi-panel Interface**: Split-screen views for step output, resource monitoring, metadata, and a shell
 - **Step-by-Step Execution**: Controlled demo progression with manual step execution
 - **Finish Lab Hotkey**: Run remaining steps and leave the demo resources available
 - **Progressive Delivery**: Flux and Flagger lab with Traefik canary routing
@@ -80,12 +80,14 @@ When running demos, Kemo launches a rich terminal interface with multiple panels
 ```
 ┌─────────────────────────────────┬─────────────────────┐
 │                                 │                     │
-│         Main Execution          │      Demo Logs      │
-│            Panel                │      (tail -f)      │
+│         Interactive Shell       │   Demo Step Output  │
+│                                 │                     │
 │                                 │                     │
 │                                 ┼─────────────────────┤
 │                                 │ Kubernetes Resources│
 │                                 │ (get, status)       │
+├─────────────────────────────────┤                     │
+│          Demo Metadata          │                     │
 └─────────────────────────────────┴─────────────────────┘
 ```
 
@@ -105,6 +107,8 @@ All hotkeys use the prefix `Ctrl-k` followed by a command key:
 - **`Ctrl-k d`** - Open Kubernetes dashboard in browser
 - **`Ctrl-k o`** - Tail application logs in current pane
 - **`Ctrl-k i`** - Describe selected Kubernetes resource (interactive)
+
+The top-right pane shows step output. The top-left pane stays available as an interactive shell. Kemo also saves step output in the demo's `.logs/` directory.
 
 #### Panel Management
 - **`Ctrl-k v`** - Split current pane vertically

@@ -19,11 +19,8 @@ gum style --foreground cyan 'Press Ctrl-k n for next step'
 gum style --foreground cyan 'Press Ctrl-k f to run all remaining steps'
 echo
 
-# Show initial stepper status
-"$SCRIPT_DIR/demo-stepper.sh" status
-
-# Wait for user to press Ctrl-k n to proceed
-gum style --foreground yellow "Ready for manual stepping. Use Ctrl-k n to execute next step."
+# The stepper runs in its own pane. Keep this pane available for shell commands.
+gum style --foreground yellow "The stepper is in the top-right pane. Use Ctrl-k n to execute the next step."
 
 # Keep the shell open for interaction
 exec $SHELL
